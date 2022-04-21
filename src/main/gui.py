@@ -20,6 +20,7 @@ class GUI(QMainWindow):
         self._active_server = self.MANAGER.servers[0]
 
         self.setWindowTitle("McServerManager")
+        self.setStyleSheet("color: #C1C1C1; background-color: #464545;")
 
         screen = QApplication.primaryScreen()
         self._min_size = QSize(int(screen.size().width() / 4), int(screen.size().height() / 4))
@@ -27,7 +28,6 @@ class GUI(QMainWindow):
 
         mainbox = QVBoxLayout()
         widget = QWidget()
-        widget.setStyleSheet("color: #C1C1C1; background-color: #464545;")
         widget.setLayout(mainbox)
         self.setCentralWidget(widget)
 
@@ -58,9 +58,10 @@ class GUI(QMainWindow):
         fixedWidthWidget.setLayout(sideVBox)
         mainbox.addWidget(fixedWidthWidget)
 
-        for c, server in enumerate(self.MANAGER.servers):
-            self._buttons[server[0]] = QPushButton(f"\n{server[0]}\n")
+        for server in self.MANAGER.servers:
+            self._buttons[server[0]] = QPushButton(server[0])
             self._buttons[server[0]].setObjectName(server[0])
+            self._buttons[server[0]].setFixedHeight(50)
             self._buttons[server[0]].clicked.connect(self._button_clicked)
             self._buttons[server[0]].setCheckable(False)
             sideVBox.addWidget(self._buttons[server[0]])
@@ -127,20 +128,27 @@ class GUI(QMainWindow):
         whitelistHBox.addWidget(self._line_edits["whitelist"])
 
     def _load_config(self):
+        self._line_edits["name"].setText(self._active_server[0])
+
         try:
-            self._line_edits["name"].setText(self._active_server[0])
             self._line_edits["port"].setText(config_helper.get_setting(self._active_server[1], "port"))
+        except (KeyError, FileNotFoundError):
+            self._line_edits["port"].setText("")
+
+        try:
             self._line_edits["maxplayers"].setText(config_helper.get_setting(self._active_server[1], "maxp"))
+        except (KeyError, FileNotFoundError):
+            self._line_edits["maxplayers"].setText("")
+
+        try:
             self._line_edits["whitelist"].setText(config_helper.get_setting(self._active_server[1], "whitelist"))
-        except KeyError:
-            pass
-        except FileNotFoundError:
-            pass
+        except (KeyError, FileNotFoundError):
+            self._line_edits["whitelist"].setText("")
 
     def _name_changed(self, text):
         self.MANAGER.change_server_name(self._active_server[0], text)
         self._buttons[text] = self._buttons.pop(self._active_server[0])
-        self._buttons[text].setText("\n" + text + "\n")
+        self._buttons[text].setText(text)
         self._active_server = [text, self._active_server[1]]
 
     def _port_changed(self, text):
