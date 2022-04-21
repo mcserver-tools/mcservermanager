@@ -2,37 +2,37 @@ import json
 import os
 
 # the path to the config file
-FILEPATH = "./config.json"
+FILEPATH = "."
 
-def get_setting(key):
+def get_setting(path, key):
     # gets the setting responding for the given key
-    with open(FILEPATH, "r+") as configfile:
+    with open(path + "/config.json", "r+") as configfile:
         settings = json.load(configfile)
         return settings[key]
 
-def get_settings():
+def get_settings(path):
     # returns the saved config as a dictionary
-    with open(FILEPATH, "r+") as configfile:
+    with open(path + "/config.json", "r+") as configfile:
         return json.load(configfile)
 
-def save_setting(key, value):
+def save_setting(path, key, value):
     # saves a new key and value for it
     try:
         # tries to read the config file
-        with open(FILEPATH, "r") as configfile:
+        with open(path + "/config.json", "r") as configfile:
             # reads the config file
             settings = json.load(configfile)
         if settings == None:
             settings = {}
     except:
         # if an error occurs, assume that the config file is corrupted, and create a new one
-        with open(FILEPATH, "w+"):
+        with open(path + "/config.json", "w+"):
             pass
         settings = {}
     settings[key] = value
-    with open(FILEPATH, "w") as configfile:
+    with open(path + "/config.json", "w") as configfile:
         # saves the new settings dictionary
         json.dump(settings, configfile)
 
 # save path to the config file
-save_setting("path", os.getcwd())
+save_setting(FILEPATH, "path", os.getcwd())
