@@ -2,3 +2,4 @@ servers/
 __pycache__/
 *.pyc
 config.json
+mcserverlogs.txt
