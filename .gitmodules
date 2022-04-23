@@ -1,0 +1,3 @@
+[submodule "src/mcserverwrapper"]
+	path = src/mcserverwrapper
+	url = https://github.com/mcserver-tools/mcserverwrapper
