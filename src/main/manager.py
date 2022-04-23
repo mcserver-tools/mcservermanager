@@ -1,30 +1,39 @@
 import os
+import sys
+import importlib
 from PyQt6.QtWidgets import QApplication
 
 import config_helper
+from mcserver import McServer
+import server_storage
 from gui import GUI
 
 class Manager():
     def __init__(self) -> None:
         if self.INSTANCE is None:
-            self.servers = []
-            self.wrapper_path = "mcserverwrapper"
+            wrapper_path = os.getcwd() + "/src/mcserverwrapper/"
+            sys.path.append(wrapper_path)
+            spec = importlib.util.spec_from_file_location("wrapper", wrapper_path + "wrapper.py")
+            self.wrapper_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.wrapper_module)
+
             self._gui = None
             self.INSTANCE = self
 
     INSTANCE = None
 
     def setup(self):
-        if os.system(f"where {self.wrapper_path}") == 1:
-            self.wrapper_path = os.path.join(os.getcwd(), "mcserverwrapper/mcserverwrapper.bat")
-
         if not os.path.exists("./servers"):
             os.mkdir("./servers")
 
         try:
-            config_helper.get_setting(config_helper.FILEPATH, "servers")
+            servers = list(config_helper.get_setting(config_helper.FILEPATH, "servers"))
         except KeyError:
             config_helper.save_setting(config_helper.FILEPATH, "servers", [])
+
+        for server in servers:
+            name, path = list(server)
+            self.add_server2(name, path)
 
     def run(self):
         app = QApplication([])
@@ -35,21 +44,8 @@ class Manager():
 
         app.exec()
 
-    def add_server(self, name, path):
-        oldservers = config_helper.get_setting(config_helper.FILEPATH, "servers")
-        try:
-            self.servers = list(oldservers)
-        except Exception as e:
-            print(e)
-
-        if not any(item[0] == name for item in self.servers):
-            self.servers.append((name, path))
-        else:
-            for item in self.servers:
-                if item[0] == name:
-                    self.servers[self.servers.index(item)] = (name, path)
-
-        config_helper.save_setting(config_helper.FILEPATH, "servers", self.servers)
+    def add_server2(self, name, path):
+        server_storage.add(McServer(name, path))
 
     def change_server_name(self, old_name, new_name):
         if not any(item[0] == old_name for item in self.servers):

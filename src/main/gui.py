@@ -1,8 +1,10 @@
 import os
+from time import sleep
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QWidget, QApplication, QGroupBox
 
 import config_helper
+import server_storage
 
 class GUI(QMainWindow):
     def __init__(self, manager):
@@ -20,7 +22,7 @@ class GUI(QMainWindow):
     INSTANCE = None
 
     def setup(self):
-        self._active_server = self.MANAGER.servers[0]
+        self._active_server = server_storage.get(server_storage.keys()[0])
 
         self.setWindowTitle("McServerManager")
         self.setStyleSheet("color: #C1C1C1; background-color: #464545;")
@@ -43,8 +45,8 @@ class GUI(QMainWindow):
 
         self._load_config()
 
-    def load_profile(self, name, path):
-        self._active_server = [name, path]
+    def load_profile(self, server):
+        self._active_server = server
         self._load_config()
 
     def _add_header(self, mainbox):
@@ -61,13 +63,14 @@ class GUI(QMainWindow):
         fixedWidthWidget.setLayout(sideVBox)
         mainbox.addWidget(fixedWidthWidget)
 
-        for server in self.MANAGER.servers:
-            self._buttons[server[0]] = QPushButton(server[0] + "\nstopped")
-            self._buttons[server[0]].setObjectName(server[0])
-            self._buttons[server[0]].setFixedHeight(50)
-            self._buttons[server[0]].clicked.connect(self._button_clicked)
-            self._buttons[server[0]].setCheckable(False)
-            sideVBox.addWidget(self._buttons[server[0]])
+        for key in server_storage.keys():
+            server = server_storage.get(key)
+            self._buttons[server.name] = QPushButton(server.name + "\nstopped")
+            self._buttons[server.name].setObjectName(server.name)
+            self._buttons[server.name].setFixedHeight(50)
+            self._buttons[server.name].clicked.connect(self._button_clicked)
+            self._buttons[server.name].setCheckable(False)
+            sideVBox.addWidget(self._buttons[server.name])
 
         sideVBox.addStretch()
 
@@ -121,7 +124,7 @@ class GUI(QMainWindow):
         self._labels["port"] = QLabel("Port:")
         self._line_edits["port"] = QLineEdit()
         self._line_edits["port"].setPlaceholderText("25565")
-        self._line_edits["port"].textChanged.connect(lambda text: config_helper.save_setting(GUI.INSTANCE._active_server[1], "port", text))
+        self._line_edits["port"].textChanged.connect(lambda text: config_helper.save_setting(GUI.INSTANCE._active_server.path, "port", text))
         portHBox.addWidget(self._labels["port"])
         portHBox.addWidget(self._line_edits["port"])
 
@@ -136,7 +139,7 @@ class GUI(QMainWindow):
         self._buttons["start"] = QPushButton("Start")
         self._buttons["start"].setObjectName("start")
         self._buttons["start"].setFixedWidth(80)
-        self._buttons["start"].clicked.connect(self._start_server)
+        self._buttons["start"].clicked.connect(self._start_button_clicked)
         self._buttons["start"].setCheckable(False)
 
         port_maxplayers_HBox = QHBoxLayout()
@@ -196,83 +199,102 @@ class GUI(QMainWindow):
         startupVBox.addLayout(javaHBox)
 
     def _load_config(self):
-        self._line_edits["name"].setText(self._active_server[0])
-        self._labels["path"].setText(self._active_server[1])
+        self._line_edits["name"].setText(self._active_server.name)
+        self._labels["path"].setText(self._active_server.path)
 
         try:
-            self._line_edits["port"].setText(config_helper.get_setting(self._active_server[1], "port"))
+            self._line_edits["port"].setText(server_storage.get(self._active_server.name).get("port"))
         except (KeyError, FileNotFoundError):
             self._line_edits["port"].setText("")
 
         try:
-            self._line_edits["maxplayers"].setText(config_helper.get_setting(self._active_server[1], "maxp"))
+            self._line_edits["maxplayers"].setText(server_storage.get(self._active_server.name).get("maxp"))
         except (KeyError, FileNotFoundError):
             self._line_edits["maxplayers"].setText("")
 
         try:
-            self._line_edits["whitelist"].setText(config_helper.get_setting(self._active_server[1], "whitelist"))
+            self._line_edits["whitelist"].setText(server_storage.get(self._active_server.name).get("whitelist"))
         except (KeyError, FileNotFoundError):
             self._line_edits["whitelist"].setText("")
 
         try:
-            self._line_edits["ram"].setText(config_helper.get_setting(self._active_server[1], "ram"))
+            self._line_edits["ram"].setText(server_storage.get(self._active_server.name).get("ram"))
         except (KeyError, FileNotFoundError):
             self._line_edits["ram"].setText("")
 
         try:
-            self._line_edits["jar"].setText(config_helper.get_setting(self._active_server[1], "jar"))
+            self._line_edits["jar"].setText(server_storage.get(self._active_server.name).get("jar"))
         except (KeyError, FileNotFoundError):
             self._line_edits["jar"].setText("")
 
         try:
-            self._line_edits["java"].setText(config_helper.get_setting(self._active_server[1], "java"))
+            self._line_edits["java"].setText(server_storage.get(self._active_server.name).get("java"))
         except (KeyError, FileNotFoundError):
             self._line_edits["java"].setText("")
 
     def _name_changed(self, text):
-        self.MANAGER.change_server_name(self._active_server[0], text)
-        self._buttons[text] = self._buttons.pop(self._active_server[0])
+        server_storage.rename(self._active_server.name, text)
+        self._buttons[text] = self._buttons.pop(self._active_server.name)
         self._buttons[text].setText(text + "\n" + self._buttons[text].text().split("\n")[1])
-        self._active_server = [text, self._active_server[1]]
+        self._active_server = server_storage.get(text)
 
     def _port_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "port", text)
+        server_storage.get(self._active_server.name).set("port", text)
 
     def _max_players_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "maxp", text)
+        server_storage.get(self._active_server.name).set("maxp", text)
 
     def _whitelist_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "whitelist", text)
+        server_storage.get(self._active_server.name).set("whitelist", text)
 
     def _ram_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "ram", text)
+        server_storage.get(self._active_server.name).set("ram", text)
 
     def _jar_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "jar", text)
+        server_storage.get(self._active_server.name).set("jar", text)
 
     def _java_changed(self, text):
-        config_helper.save_setting(self._active_server[1], "java", text)
+        server_storage.get(self._active_server.name).set("java", text)
 
     def _button_clicked(self):
         servername = self.sender().objectName()
-        server = None
-        for item in self.MANAGER.servers:
-            if item[0] == servername:
-                server = item
-        self.load_profile(server[0], server[1])
+        self.load_profile(server_storage.get(servername))
+
+    def _start_button_clicked(self):
+        if self._buttons["start"].text() == "Start":
+            self._start_server()
+        elif self._buttons["start"].text() == "Stop":
+            self._stop_server()
+        else:
+            raise Exception(f"start_button is in false state {self._buttons['start'].text()}")
 
     def _start_server(self):
-        server_name = self._active_server[0]
+        server_name = self._active_server.name
+        server = server_storage.get(server_name)
+        cmd = server.get_start_command()
+
         self._buttons[server_name].setText(server_name + "\nstarting...")
-        config = config_helper.get_settings(self._active_server[1])
 
-        params = ["java", "jar", "ram", "port", "maxp", "whitelist"]
-        cmd = self.MANAGER.wrapper_path
-        for param in params:
-            try:
-                cmd += f" -{param} " + config[param] if config[param] != "" else ""
-            except KeyError:
-                pass
-
-        print(f"Starting {self._active_server[0]} with the following command:")
+        print(f"Starting {server_name} with the following command:")
         print(cmd)
+
+        main_cwd = os.getcwd()
+        os.chdir(server.path)
+        server.wrapper = GUI.MANAGER.wrapper_module.Wrapper(args=cmd)
+        server.wrapper.startup()
+        os.chdir(main_cwd)
+
+        self._buttons[server_name].setText(server_name + f"\nonline (0/{server.get('maxp')})")
+        self._buttons["start"].setText("Stop")
+
+    def _stop_server(self):
+        server_name = self._active_server.name
+        server = server_storage.get(server_name)
+
+        self._buttons[server_name].setText(server_name + "\nstopping...")
+
+        server.wrapper.stop()
+        sleep(5)
+
+        self._buttons[server_name].setText(server_name + f"\nstopped")
+        self._buttons["start"].setText("Start")
