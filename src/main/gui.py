@@ -1,3 +1,4 @@
+import os
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QWidget, QApplication, QGroupBox
 
@@ -12,9 +13,11 @@ class GUI(QMainWindow):
         self._labels = {}
         self._line_edits = {}
         self._active_server = [None, None]
-        self.MANAGER = manager
+        GUI.MANAGER = manager
+        GUI.INSTANCE = self
 
     MANAGER = None
+    INSTANCE = None
 
     def setup(self):
         self._active_server = self.MANAGER.servers[0]
@@ -59,7 +62,7 @@ class GUI(QMainWindow):
         mainbox.addWidget(fixedWidthWidget)
 
         for server in self.MANAGER.servers:
-            self._buttons[server[0]] = QPushButton(server[0])
+            self._buttons[server[0]] = QPushButton(server[0] + "\nstopped")
             self._buttons[server[0]].setObjectName(server[0])
             self._buttons[server[0]].setFixedHeight(50)
             self._buttons[server[0]].clicked.connect(self._button_clicked)
@@ -72,18 +75,18 @@ class GUI(QMainWindow):
         mainVBox = QVBoxLayout()
         mainbox.addLayout(mainVBox)
 
-        self._add_general_area(mainVBox)
+        self._add_overview_area(mainVBox)
         self._add_whitelist_area(mainVBox)
+        self._add_startup_area(mainVBox)
 
         mainVBox.addStretch()
 
-    def _add_general_area(self, mainVBox):
-        general_groupbox = QGroupBox("General")
-        # general_groupbox.setStyleSheet("QGroupBox { border: 3px solid white;}")
-        general_groupbox.setCheckable(False)
-        mainVBox.addWidget(general_groupbox)
-        generalVBox = QVBoxLayout()
-        general_groupbox.setLayout(generalVBox)
+    def _add_overview_area(self, mainVBox):
+        overview_groupbox = QGroupBox("Overview")
+        overview_groupbox.setCheckable(False)
+        mainVBox.addWidget(overview_groupbox)
+        overviewVBox = QVBoxLayout()
+        overview_groupbox.setLayout(overviewVBox)
 
         nameHBox = QHBoxLayout()
         self._labels["name"] = QLabel("Server name:")
@@ -91,13 +94,34 @@ class GUI(QMainWindow):
         self._line_edits["name"].textChanged.connect(self._name_changed)
         nameHBox.addWidget(self._labels["name"])
         nameHBox.addWidget(self._line_edits["name"])
-        generalVBox.addLayout(nameHBox)
+
+        self._buttons["export"] = QPushButton("Export")
+        self._buttons["export"].setObjectName("export")
+        self._buttons["export"].setFixedWidth(80)
+        self._buttons["export"].clicked.connect(lambda *x: print("export button clicked"))
+        self._buttons["export"].setCheckable(False)
+        nameHBox.addWidget(self._buttons["export"])
+        overviewVBox.addLayout(nameHBox)
+
+        pathHBox = QHBoxLayout()
+        self._labels["path_label"] = QLabel("Server path:")
+        self._labels["path"] = QLabel()
+        pathHBox.addWidget(self._labels["path_label"])
+        pathHBox.addWidget(self._labels["path"])
+
+        self._buttons["path"] = QPushButton("Set Path")
+        self._buttons["path"].setObjectName("path")
+        self._buttons["path"].setFixedWidth(80)
+        self._buttons["path"].clicked.connect(lambda *x: print("path button clicked"))
+        self._buttons["path"].setCheckable(False)
+        pathHBox.addWidget(self._buttons["path"])
+        overviewVBox.addLayout(pathHBox)
 
         portHBox = QHBoxLayout()
         self._labels["port"] = QLabel("Port:")
         self._line_edits["port"] = QLineEdit()
         self._line_edits["port"].setPlaceholderText("25565")
-        self._line_edits["port"].textChanged.connect(self._port_changed)
+        self._line_edits["port"].textChanged.connect(lambda text: config_helper.save_setting(GUI.INSTANCE._active_server[1], "port", text))
         portHBox.addWidget(self._labels["port"])
         portHBox.addWidget(self._line_edits["port"])
 
@@ -109,10 +133,17 @@ class GUI(QMainWindow):
         maxplayersHBox.addWidget(self._labels["maxplayers"])
         maxplayersHBox.addWidget(self._line_edits["maxplayers"])
 
+        self._buttons["start"] = QPushButton("Start")
+        self._buttons["start"].setObjectName("start")
+        self._buttons["start"].setFixedWidth(80)
+        self._buttons["start"].clicked.connect(self._start_server)
+        self._buttons["start"].setCheckable(False)
+
         port_maxplayers_HBox = QHBoxLayout()
         port_maxplayers_HBox.addLayout(portHBox)
         port_maxplayers_HBox.addLayout(maxplayersHBox)
-        generalVBox.addLayout(port_maxplayers_HBox)
+        port_maxplayers_HBox.addWidget(self._buttons["start"])
+        overviewVBox.addLayout(port_maxplayers_HBox)
 
     def _add_whitelist_area(self, mainVBox):
         whitelist_groupbox = QGroupBox("Whitelist")
@@ -127,8 +158,46 @@ class GUI(QMainWindow):
         whitelistHBox.addWidget(self._labels["whitelist"])
         whitelistHBox.addWidget(self._line_edits["whitelist"])
 
+    def _add_startup_area(self, mainVBox):
+        startup_groupbox = QGroupBox("Startup params")
+        startup_groupbox.setCheckable(False)
+        mainVBox.addWidget(startup_groupbox)
+        startupVBox = QVBoxLayout()
+        startup_groupbox.setLayout(startupVBox)
+
+        ramHBox = QHBoxLayout()
+        self._labels["ram"] = QLabel("RAM:")
+        self._line_edits["ram"] = QLineEdit()
+        self._line_edits["ram"].setPlaceholderText("4G")
+        self._line_edits["ram"].textChanged.connect(self._ram_changed)
+        ramHBox.addWidget(self._labels["ram"])
+        ramHBox.addWidget(self._line_edits["ram"])
+
+        jarHBox = QHBoxLayout()
+        self._labels["jar"] = QLabel("Server jar:")
+        self._line_edits["jar"] = QLineEdit()
+        self._line_edits["jar"].setPlaceholderText("server.jar")
+        self._line_edits["jar"].textChanged.connect(self._jar_changed)
+        jarHBox.addWidget(self._labels["jar"])
+        jarHBox.addWidget(self._line_edits["jar"])
+
+        javaHBox = QHBoxLayout()
+        self._labels["java"] = QLabel("Java executable:")
+        self._line_edits["java"] = QLineEdit()
+        self._line_edits["java"].setPlaceholderText(os.popen("where java").read().split("\n")[0])
+        self._line_edits["java"].textChanged.connect(self._java_changed)
+        javaHBox.addWidget(self._labels["java"])
+        javaHBox.addWidget(self._line_edits["java"])
+
+        ram_jar_HBox = QHBoxLayout()
+        ram_jar_HBox.addLayout(ramHBox)
+        ram_jar_HBox.addLayout(jarHBox)
+        startupVBox.addLayout(ram_jar_HBox)
+        startupVBox.addLayout(javaHBox)
+
     def _load_config(self):
         self._line_edits["name"].setText(self._active_server[0])
+        self._labels["path"].setText(self._active_server[1])
 
         try:
             self._line_edits["port"].setText(config_helper.get_setting(self._active_server[1], "port"))
@@ -145,10 +214,25 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self._line_edits["whitelist"].setText("")
 
+        try:
+            self._line_edits["ram"].setText(config_helper.get_setting(self._active_server[1], "ram"))
+        except (KeyError, FileNotFoundError):
+            self._line_edits["ram"].setText("")
+
+        try:
+            self._line_edits["jar"].setText(config_helper.get_setting(self._active_server[1], "jar"))
+        except (KeyError, FileNotFoundError):
+            self._line_edits["jar"].setText("")
+
+        try:
+            self._line_edits["java"].setText(config_helper.get_setting(self._active_server[1], "java"))
+        except (KeyError, FileNotFoundError):
+            self._line_edits["java"].setText("")
+
     def _name_changed(self, text):
         self.MANAGER.change_server_name(self._active_server[0], text)
         self._buttons[text] = self._buttons.pop(self._active_server[0])
-        self._buttons[text].setText(text)
+        self._buttons[text].setText(text + "\n" + self._buttons[text].text().split("\n")[1])
         self._active_server = [text, self._active_server[1]]
 
     def _port_changed(self, text):
@@ -160,6 +244,15 @@ class GUI(QMainWindow):
     def _whitelist_changed(self, text):
         config_helper.save_setting(self._active_server[1], "whitelist", text)
 
+    def _ram_changed(self, text):
+        config_helper.save_setting(self._active_server[1], "ram", text)
+
+    def _jar_changed(self, text):
+        config_helper.save_setting(self._active_server[1], "jar", text)
+
+    def _java_changed(self, text):
+        config_helper.save_setting(self._active_server[1], "java", text)
+
     def _button_clicked(self):
         servername = self.sender().objectName()
         server = None
@@ -167,3 +260,19 @@ class GUI(QMainWindow):
             if item[0] == servername:
                 server = item
         self.load_profile(server[0], server[1])
+
+    def _start_server(self):
+        server_name = self._active_server[0]
+        self._buttons[server_name].setText(server_name + "\nstarting...")
+        config = config_helper.get_settings(self._active_server[1])
+
+        params = ["java", "jar", "ram", "port", "maxp", "whitelist"]
+        cmd = self.MANAGER.wrapper_path
+        for param in params:
+            try:
+                cmd += f" -{param} " + config[param] if config[param] != "" else ""
+            except KeyError:
+                pass
+
+        print(f"Starting {self._active_server[0]} with the following command:")
+        print(cmd)
