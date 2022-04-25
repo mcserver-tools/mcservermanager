@@ -7,7 +7,9 @@ from PyQt6.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
                              QLineEdit, QMainWindow, QPushButton, QVBoxLayout,
                              QWidget)
 
+
 import server_storage
+import info_getter
 from mcserver import McServer
 
 class GUI(QMainWindow):
@@ -26,8 +28,6 @@ class GUI(QMainWindow):
     INSTANCE = None
 
     def setup(self):
-        self._active_server = server_storage.get(server_storage.keys()[0])
-
         self.setWindowTitle("McServerManager")
         self.setStyleSheet("color: #C1C1C1; background-color: #464545;")
 
@@ -40,14 +40,17 @@ class GUI(QMainWindow):
         widget.setLayout(mainbox)
         self.setCentralWidget(widget)
 
-        # button.clicked.connect(self._button_clicked)
         self._add_header(mainbox)
         contentHBox = QHBoxLayout()
         mainbox.addLayout(contentHBox)
         self._add_sidebar(contentHBox)
         self._add_mainarea(contentHBox)
 
-        self._load_config()
+        self.load_profile(server_storage.get(server_storage.keys()[0]))
+
+        self._buttons[self._active_server.name].setChecked(True)
+
+        Thread(target=self._update_players_thread, daemon=True).start()
 
     def load_profile(self, server):
         self._active_server = server
@@ -73,7 +76,7 @@ class GUI(QMainWindow):
             self._buttons[server.name].setObjectName(server.name)
             self._buttons[server.name].setFixedHeight(50)
             self._buttons[server.name].clicked.connect(self._button_clicked)
-            self._buttons[server.name].setCheckable(False)
+            self._buttons[server.name].setCheckable(True)
             sideVBox.addWidget(self._buttons[server.name])
 
         sideVBox.addStretch()
@@ -269,7 +272,9 @@ class GUI(QMainWindow):
 
     def _button_clicked(self):
         servername = self.sender().objectName()
-        self.load_profile(server_storage.get(servername))
+        if servername != self._active_server.name:
+            self._buttons[self._active_server.name].setChecked(False)
+            self.load_profile(server_storage.get(servername))
 
     def _start_button_clicked(self):
         if self._buttons["start"].text() == "Start":
@@ -310,3 +315,20 @@ class GUI(QMainWindow):
         server.wrapper = None
         self._buttons[server_name].setText(server_name + f"\nstopped")
         self._buttons["start"].setText("Start")
+
+    def _update_players_thread(self):
+        while True:
+            for server in server_storage.get_all().values():
+                if server.wrapper is not None:
+                    self._handle_server(server)
+            sleep(3)
+
+    def _handle_server(self, server):
+        status = info_getter.ping_address_with_return("127.0.0.1", server.get("port"))
+        if status is not None:
+            old_text = self._buttons[server.name].text()
+            if "starting..." in old_text or "stopping..." in old_text:
+                return
+            split_text = old_text.split("(")
+            new_text = f"{split_text[0]}({status.players.online}/{split_text[1].split('/')[1]}"
+            self._buttons[server.name].setText(new_text)

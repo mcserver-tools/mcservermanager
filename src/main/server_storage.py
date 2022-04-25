@@ -17,6 +17,9 @@ def get(name: str) -> McServer:
 
     return _storage[name]
 
+def get_all():
+    return _storage.copy()
+
 def keys() -> list[str]:
     return list(_storage.keys())
 
