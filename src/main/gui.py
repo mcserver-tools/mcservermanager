@@ -1,10 +1,14 @@
 import os
+from threading import Thread
 from time import sleep
-from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit, QHBoxLayout, QVBoxLayout, QWidget, QApplication, QGroupBox
 
-import config_helper
+from PyQt6.QtCore import QSize
+from PyQt6.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
+                             QLineEdit, QMainWindow, QPushButton, QVBoxLayout,
+                             QWidget)
+
 import server_storage
+from mcserver import McServer
 
 class GUI(QMainWindow):
     def __init__(self, manager):
@@ -14,7 +18,7 @@ class GUI(QMainWindow):
         self._buttons = {}
         self._labels = {}
         self._line_edits = {}
-        self._active_server = [None, None]
+        self._active_server: McServer = None
         GUI.MANAGER = manager
         GUI.INSTANCE = self
 
@@ -124,7 +128,7 @@ class GUI(QMainWindow):
         self._labels["port"] = QLabel("Port:")
         self._line_edits["port"] = QLineEdit()
         self._line_edits["port"].setPlaceholderText("25565")
-        self._line_edits["port"].textChanged.connect(lambda text: config_helper.save_setting(GUI.INSTANCE._active_server.path, "port", text))
+        self._line_edits["port"].textChanged.connect(lambda text: server_storage.get(self._active_server.name).set("port", text))
         portHBox.addWidget(self._labels["port"])
         portHBox.addWidget(self._line_edits["port"])
 
@@ -199,38 +203,45 @@ class GUI(QMainWindow):
         startupVBox.addLayout(javaHBox)
 
     def _load_config(self):
+        server = server_storage.get(self._active_server.name)
+
         self._line_edits["name"].setText(self._active_server.name)
         self._labels["path"].setText(self._active_server.path)
 
         try:
-            self._line_edits["port"].setText(server_storage.get(self._active_server.name).get("port"))
+            self._line_edits["port"].setText(server.get("port"))
         except (KeyError, FileNotFoundError):
             self._line_edits["port"].setText("")
 
         try:
-            self._line_edits["maxplayers"].setText(server_storage.get(self._active_server.name).get("maxp"))
+            self._line_edits["maxplayers"].setText(server.get("maxp"))
         except (KeyError, FileNotFoundError):
             self._line_edits["maxplayers"].setText("")
 
         try:
-            self._line_edits["whitelist"].setText(server_storage.get(self._active_server.name).get("whitelist"))
+            self._line_edits["whitelist"].setText(server.get("whitelist"))
         except (KeyError, FileNotFoundError):
             self._line_edits["whitelist"].setText("")
 
         try:
-            self._line_edits["ram"].setText(server_storage.get(self._active_server.name).get("ram"))
+            self._line_edits["ram"].setText(server.get("ram"))
         except (KeyError, FileNotFoundError):
             self._line_edits["ram"].setText("")
 
         try:
-            self._line_edits["jar"].setText(server_storage.get(self._active_server.name).get("jar"))
+            self._line_edits["jar"].setText(server.get("jar"))
         except (KeyError, FileNotFoundError):
             self._line_edits["jar"].setText("")
 
         try:
-            self._line_edits["java"].setText(server_storage.get(self._active_server.name).get("java"))
+            self._line_edits["java"].setText(server.get("java"))
         except (KeyError, FileNotFoundError):
             self._line_edits["java"].setText("")
+
+        if server.wrapper is not None:
+            self._buttons["start"].setText("Stop")
+        else:
+            self._buttons["start"].setText("Start")
 
     def _name_changed(self, text):
         server_storage.rename(self._active_server.name, text)
@@ -262,9 +273,9 @@ class GUI(QMainWindow):
 
     def _start_button_clicked(self):
         if self._buttons["start"].text() == "Start":
-            self._start_server()
+            Thread(target=self._start_server).start()
         elif self._buttons["start"].text() == "Stop":
-            self._stop_server()
+            Thread(target=self._stop_server).start()
         else:
             raise Exception(f"start_button is in false state {self._buttons['start'].text()}")
 
@@ -275,7 +286,7 @@ class GUI(QMainWindow):
 
         self._buttons[server_name].setText(server_name + "\nstarting...")
 
-        print(f"Starting {server_name} with the following command:")
+        print(f"Starting {server_name} with the following args:")
         print(cmd)
 
         main_cwd = os.getcwd()
@@ -296,5 +307,6 @@ class GUI(QMainWindow):
         server.wrapper.stop()
         sleep(5)
 
+        server.wrapper = None
         self._buttons[server_name].setText(server_name + f"\nstopped")
         self._buttons["start"].setText("Start")

@@ -2,7 +2,7 @@ from mcserver import McServer
 
 _storage = {}
 
-def add(server: McServer):
+def add(server: McServer) -> None:
     if not isinstance(server, McServer):
         raise TypeError(f"Expected McServer, got {type(server)}")
 
@@ -11,13 +11,13 @@ def add(server: McServer):
 
     _storage[server.name] = server
 
-def get(name: str):
+def get(name: str) -> McServer:
     if not isinstance(name, str):
         raise TypeError(f"Expected str, got {type(name)}")
 
     return _storage[name]
 
-def keys():
+def keys() -> list[str]:
     return list(_storage.keys())
 
 def rename(old_name: str, new_name: str):
