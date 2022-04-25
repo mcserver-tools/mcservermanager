@@ -3,10 +3,10 @@ import sys
 import importlib
 from PyQt6.QtWidgets import QApplication
 
-import config_helper
-from mcserver import McServer
-import server_storage
-from gui import GUI
+import helpers.config_helper as config_helper
+from dataclass.mcserver import McServer
+import core.server_storage as server_storage
+import gui.builder as guibuilder
 
 class Manager():
     def __init__(self) -> None:
@@ -33,18 +33,17 @@ class Manager():
 
         for server in servers:
             name, path = list(server)
-            self.add_server2(name, path)
+            self.add_server(name, path)
 
     def run(self):
         app = QApplication([])
 
-        self._gui = GUI(self.INSTANCE)
-        self._gui.setup()
+        self._gui = guibuilder.build(self.INSTANCE)
         self._gui.show()
 
         app.exec()
 
-    def add_server2(self, name, path):
+    def add_server(self, name, path):
         server_storage.add(McServer(name, path))
 
     def change_server_name(self, old_name, new_name):

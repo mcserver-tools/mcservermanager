@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-import config_helper
+import helpers.config_helper as config_helper
 
 @dataclass
 class McServer():

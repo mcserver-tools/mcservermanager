@@ -1,4 +1,4 @@
-from mcserver import McServer
+from dataclass.mcserver import McServer
 
 _storage = {}
 
