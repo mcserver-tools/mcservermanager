@@ -31,3 +31,7 @@ class DiscordBot(commands.Bot):
         logout_fut = asyncio.run_coroutine_threadsafe(self.close(), self.loop)
         logout_fut.result()
         DiscordBot.INSTANCE = None
+
+    def send(self, channel_id, text):
+        send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text), self.loop)
+        send_fut.result()

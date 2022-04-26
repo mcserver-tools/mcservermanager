@@ -151,7 +151,7 @@ class GUI(QMainWindow):
 
         main_cwd = os.getcwd()
         os.chdir(server.path)
-        server.wrapper = GUI.MANAGER.wrapper_module.Wrapper(args=cmd)
+        server.wrapper = GUI.MANAGER.wrapper_module.Wrapper(output=False, args=cmd)
         server.wrapper.startup()
         os.chdir(main_cwd)
 
