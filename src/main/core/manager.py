@@ -67,6 +67,6 @@ class Manager():
             if discord_group.discord_bot.DiscordBot.INSTANCE is not None:
                 for item in server_storage.get_all().values():
                     if item.wrapper is not None and item.get("dc_active") == 1 and item.get("dc_full") == 1 and item.get("dc_id") not in ["", None]:
-                        while not item.wrapper.output_queue.empty() and item.wrapper is not None:
+                        while item.wrapper is not None and not item.wrapper.output_queue.empty():
                             discord_group.discord_bot.DiscordBot.INSTANCE.send(int(item.get("dc_id")), item.wrapper.output_queue.get())
             sleep(1)
