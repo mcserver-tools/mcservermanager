@@ -1,13 +1,13 @@
 import os
 from threading import Thread
-from gui.gui import GUI
-
-from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QVBoxLayout,
-                             QWidget)
 
 import core.server_storage as server_storage
+from PyQt6.QtCore import QSize
+from PyQt6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
+                             QLabel, QLineEdit, QPushButton, QVBoxLayout,
+                             QWidget)
+
+from gui.gui import GUI
 
 def build(manager):
     gui = GUI(manager)
@@ -70,6 +70,7 @@ def _add_mainarea(gui, mainbox):
     _add_overview_area(gui, mainVBox)
     _add_whitelist_area(gui, mainVBox)
     _add_startup_area(gui, mainVBox)
+    _add_discord_area(gui, mainVBox)
 
     mainVBox.addStretch()
 
@@ -186,3 +187,30 @@ def _add_startup_area(gui, mainVBox):
     ram_jar_HBox.addLayout(jarHBox)
     startupVBox.addLayout(ram_jar_HBox)
     startupVBox.addLayout(javaHBox)
+
+def _add_discord_area(gui, mainVBox):
+    discord_groupbox = QGroupBox("Discord")
+    discord_groupbox.setCheckable(True)
+    discord_groupbox.toggled.connect(gui._dcbot_server_toggled)
+    gui.check_boxes["dc_active"] = discord_groupbox
+    mainVBox.addWidget(discord_groupbox)
+    discordVBox = QVBoxLayout()
+    discord_groupbox.setLayout(discordVBox)
+
+    idHBox = QHBoxLayout()
+    gui.labels["dc_id"] = QLabel("Channel id:")
+    gui.line_edits["dc_id"] = QLineEdit()
+    gui.line_edits["dc_id"].setPlaceholderText("")
+    gui.line_edits["dc_id"].textChanged.connect(gui._dcbot_id_changed)
+    idHBox.addWidget(gui.labels["dc_id"])
+    idHBox.addWidget(gui.line_edits["dc_id"])
+
+    gui.check_boxes["dc_full"] = QCheckBox()
+    gui.check_boxes["dc_full"].setText("Full logs")
+    gui.check_boxes["dc_full"].setChecked(False)
+    gui.check_boxes["dc_full"].toggled.connect(gui._dcbot_full_toggled)
+
+    dcbot_HBox = QHBoxLayout()
+    dcbot_HBox.addLayout(idHBox)
+    dcbot_HBox.addWidget(gui.check_boxes["dc_full"])
+    discordVBox.addLayout(dcbot_HBox)

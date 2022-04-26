@@ -1,8 +1,10 @@
 import os
 import sys
 import importlib
+from threading import Thread
 from PyQt6.QtWidgets import QApplication
 
+import discord_group.discord_bot
 import helpers.config_helper as config_helper
 from dataclass.mcserver import McServer
 import core.server_storage as server_storage
@@ -40,6 +42,8 @@ class Manager():
 
         self._gui = guibuilder.build(self.INSTANCE)
         self._gui.show()
+
+        Thread(target=discord_group.discord_bot.DiscordBot().start_bot, daemon=True).start()
 
         app.exec()
 

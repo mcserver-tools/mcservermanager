@@ -5,6 +5,7 @@ from time import sleep
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QMainWindow
 
+import discord_group.discord_bot
 import core.server_storage as server_storage
 import helpers.info_getter as info_getter
 from dataclass.mcserver import McServer
@@ -17,6 +18,7 @@ class GUI(QMainWindow):
         self.buttons = {}
         self.labels = {}
         self.line_edits = {}
+        self.check_boxes = {}
         self._active_server: McServer = None
         GUI.MANAGER = manager
         GUI.INSTANCE = self
@@ -64,6 +66,21 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self.line_edits["java"].setText("")
 
+        try:
+            self.line_edits["dc_id"].setText(server.get("dc_id"))
+        except (KeyError, FileNotFoundError):
+            self.line_edits["dc_id"].setText("")
+
+        try:
+            self.check_boxes["dc_full"].setChecked(bool(server.get("dc_full")))
+        except (KeyError, FileNotFoundError):
+            self.check_boxes["dc_full"].setChecked(False)
+
+        try:
+            self.check_boxes["dc_active"].setChecked(bool(server.get("dc_active")))
+        except (KeyError, FileNotFoundError):
+            self.check_boxes["dc_active"].setChecked(False)
+
         if server.wrapper is not None:
             self.buttons["start"].setText("Stop")
         else:
@@ -92,6 +109,21 @@ class GUI(QMainWindow):
 
     def _java_changed(self, text):
         server_storage.get(self._active_server.name).set("java", text)
+
+    def _dcbot_toggled(self):
+        if discord_group.discord_bot.DiscordBot.INSTANCE is None:
+            Thread(target=discord_group.discord_bot.DiscordBot().start_bot, daemon=True).start()
+        else:
+            discord_group.discord_bot.DiscordBot.INSTANCE.stop()
+
+    def _dcbot_server_toggled(self):
+        server_storage.get(self._active_server.name).set("dc_active", int(self.check_boxes["dc_active"].isChecked()))
+
+    def _dcbot_full_toggled(self):
+        server_storage.get(self._active_server.name).set("dc_full", int(self.check_boxes["dc_full"].isChecked()))
+
+    def _dcbot_id_changed(self, text):
+        server_storage.get(self._active_server.name).set("dc_id", text)
 
     def _button_clicked(self):
         servername = self.sender().objectName()
