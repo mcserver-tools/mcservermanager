@@ -1,6 +1,5 @@
 servers/
 __pycache__/
 *.pyc
-config.json
-mcserverlogs.txt
+database.db
 token.txt
