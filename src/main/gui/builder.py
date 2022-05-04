@@ -30,9 +30,9 @@ def build(manager):
     _add_sidebar(gui, contentHBox)
     _add_mainarea(gui, contentHBox)
 
-    gui.load_profile(server_storage.get(server_storage.keys()[0]))
+    gui.load_profile(server_storage.get(server_storage.uids()[0]))
 
-    gui.buttons[gui._active_server.name].setChecked(True)
+    gui.buttons[gui._active_server.uid].setChecked(True)
 
     Thread(target=gui._update_players_thread, daemon=True).start()
 
@@ -52,14 +52,14 @@ def _add_sidebar(gui, mainbox):
     fixedWidthWidget.setLayout(sideVBox)
     mainbox.addWidget(fixedWidthWidget)
 
-    for key in server_storage.keys():
+    for key in server_storage.uids():
         server = server_storage.get(key)
-        gui.buttons[server.name] = QPushButton(server.name + "\nstopped")
-        gui.buttons[server.name].setObjectName(server.name)
-        gui.buttons[server.name].setFixedHeight(50)
-        gui.buttons[server.name].clicked.connect(gui._button_clicked)
-        gui.buttons[server.name].setCheckable(True)
-        sideVBox.addWidget(gui.buttons[server.name])
+        gui.buttons[server.uid] = QPushButton(server.name + "\nstopped")
+        gui.buttons[server.uid].setObjectName(str(server.uid))
+        gui.buttons[server.uid].setFixedHeight(50)
+        gui.buttons[server.uid].clicked.connect(gui._button_clicked)
+        gui.buttons[server.uid].setCheckable(True)
+        sideVBox.addWidget(gui.buttons[server.uid])
 
     sideVBox.addStretch()
 
@@ -114,7 +114,7 @@ def _add_overview_area(gui, mainVBox):
     gui.labels["port"] = QLabel("Port:")
     gui.line_edits["port"] = QLineEdit()
     gui.line_edits["port"].setPlaceholderText("25565")
-    gui.line_edits["port"].textChanged.connect(lambda text: server_storage.get(gui._active_server.name).set("port", text))
+    gui.line_edits["port"].textChanged.connect(gui._port_changed)
     portHBox.addWidget(gui.labels["port"])
     portHBox.addWidget(gui.line_edits["port"])
 

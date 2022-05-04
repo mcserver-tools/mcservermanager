@@ -1,33 +1,42 @@
 from dataclass.mcserver import McServer
+from database.db_manager import DBManager
 
-_storage = {}
+_storage: dict[int,None] = {}
 
 def add(server: McServer) -> None:
     if not isinstance(server, McServer):
         raise TypeError(f"Expected McServer, got {type(server)}")
 
-    if server.name in _storage.keys():
-        raise KeyError(f"Server with key {server.name} already exists at {server.path}")
+    if server.uid in _storage.keys():
+        raise KeyError(f"Server {server.name} with uid {server.uid} already exists at {server.path}")
 
-    _storage[server.name] = server
+    _storage[server.uid] = server.wrapper
+    DBManager.INSTANCE.add_mcserver(server)
 
-def get(name: str) -> McServer:
-    if not isinstance(name, str):
-        raise TypeError(f"Expected str, got {type(name)}")
+def get(uid: int) -> McServer:
+    if not isinstance(uid, int):
+        raise TypeError(f"Expected int, got {type(uid)}")
 
-    return _storage[name]
+    if not uid in _storage.keys():
+        raise KeyError(f"Server with uid {uid} does not exist")
 
-def get_all():
-    return _storage.copy()
+    srv = DBManager.INSTANCE.get_mcserver(uid)
+    srv.wrapper = _storage[uid]
+    return srv
 
-def keys() -> list[str]:
-    return list(_storage.keys())
+def get_all() -> list[McServer]:
+    servers = []
+    for item in DBManager.INSTANCE.get_mcservers():
+        servers.append(item)
+        servers[-1].wrapper = _storage[servers[-1].uid]
+    return servers
 
-def rename(old_name: str, new_name: str):
-    if not isinstance(old_name, str):
-        raise TypeError(f"Expected str, got {type(old_name)}")
-    if not isinstance(new_name, str):
-        raise TypeError(f"Expected str, got {type(new_name)}")
+def save(mcserver: McServer) -> None:
+    _storage[mcserver.uid] = mcserver.wrapper
+    DBManager.INSTANCE.save_mcserver(mcserver)
 
-    _storage[new_name] = _storage.pop(old_name)
-    _storage[new_name].name = new_name
+def uids() -> list[int]:
+    return [item for item in _storage.keys()]
+
+for item in DBManager.INSTANCE.get_mcservers():
+    _storage[item.uid] = None

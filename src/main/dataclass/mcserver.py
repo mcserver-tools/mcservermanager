@@ -1,29 +1,42 @@
 from dataclasses import dataclass
 
-import helpers.config_helper as config_helper
-
 @dataclass
 class McServer():
-    name: str
-    path: str
+    uid: int
+    name: str = ""
+    path: str = ""
+    port: int = 25565
+    max_players: int = 20
+    ram: str = "4G"
+    jar: str = "server.jar"
+    whitelist: str = ""
+    javapath: str = "java"
+    dc_active: bool = False
+    dc_id: int = 0
+    dc_full: bool = False
     wrapper = None
 
-    def get(self, key):
-        return config_helper.get_setting(self.path, key)
+    def __post_init__(self):
+        if not isinstance(self.uid, int):
+            raise TypeError(f"uid has to be int, but is {type(self.uid)}")
 
-    def set(self, key, value):
-        config_helper.save_setting(self.path, key, value)
-
-    def keys(self):
-        return config_helper.get_settings(self.path).keys()
-
-    def get_start_command(self):
-        config = config_helper.get_settings(self.path)
-        params = ["java", "jar", "ram", "port", "maxp", "whitelist"]
+    def get_start_command(self) -> str:
+        params = [("java", self.javapath), ("jar", self.jar), ("ram", self.ram), ("port", self.port), ("maxp", self.max_players), ("whitelist", self._whitelist_str())]
         cmd = ""
+
         for param in params:
             try:
-                cmd += f" -{param} " + config[param] if config[param] != "" else ""
+                cmd += f" -{param[0]} {param[1]}" if param[1] != "" else ""
             except KeyError:
                 pass
         return cmd.strip(" ")
+
+    def _whitelist_str(self):
+        return str(self.whitelist)
+
+    def __str__(self) -> str:
+        return f'name "{self.name}", path "{self.path}", uid "{self.uid}", {self.get_start_command().replace(" -", ", ")[1::]}'
+
+if __name__ == "__main__":
+    srv = McServer(35235235, "Test", "some/path/", 25566, 4, "3G", "paper-1.xx.jar", "Emanuel1,Pfefan", "java", False, 0, False)
+    print(srv.get_start_command())

@@ -13,11 +13,10 @@ class DiscordBot(commands.Bot):
         for cog in self._cogs:
             cog.setup(self)
 
-        DiscordBot.INSTANCE = self
-
     INSTANCE = None
 
     async def on_ready(self):
+        DiscordBot.INSTANCE = self
         print(f"{self.user} is now online")
 
     async def on_reaction_add(self, reaction, user):
@@ -30,16 +29,16 @@ class DiscordBot(commands.Bot):
             return await super().on_message(message)
 
         mcserver = None
-        for item in server_storage.get_all().values():
+        for item in server_storage.get_all():
             try:
-                assert int(item.get("dc_id")) == message.channel.id
+                assert int(item.dc_id) == message.channel.id
                 mcserver = item
                 break
             except Exception:
                 pass
 
         if mcserver is not None:
-            if mcserver.wrapper is not None and mcserver.get("dc_active") == 1:
+            if mcserver.wrapper is not None and mcserver.dc_active == 1:
                 if message.content[0] != "/":
                     mcserver.wrapper.send_command("/" + message.content)
                 else:

@@ -1,15 +1,16 @@
+import importlib
 import os
 import sys
-import importlib
 from threading import Thread
 from time import sleep
-from PyQt6.QtWidgets import QApplication
 
 import discord_group.discord_bot
-import helpers.config_helper as config_helper
-from dataclass.mcserver import McServer
-import core.server_storage as server_storage
 import gui.builder as guibuilder
+from database.db_manager import DBManager
+from dataclass.mcserver import McServer
+from PyQt6.QtWidgets import QApplication
+
+import core.server_storage as server_storage
 
 class Manager():
     def __init__(self) -> None:
@@ -29,15 +30,6 @@ class Manager():
         if not os.path.exists("./servers"):
             os.mkdir("./servers")
 
-        try:
-            servers = list(config_helper.get_setting(config_helper.FILEPATH, "servers"))
-        except KeyError:
-            config_helper.save_setting(config_helper.FILEPATH, "servers", [])
-
-        for server in servers:
-            name, path = list(server)
-            self.add_server(name, path)
-
     def run(self):
         app = QApplication([])
 
@@ -50,7 +42,7 @@ class Manager():
         app.exec()
 
     def add_server(self, name, path):
-        server_storage.add(McServer(name, path))
+        server_storage.add(McServer(uid=DBManager.INSTANCE.get_new_uid(), name=name, path=path))
 
     def change_server_name(self, old_name, new_name):
         if not any(item[0] == old_name for item in self.servers):
@@ -65,8 +57,8 @@ class Manager():
     def _send_discord_logs(self):
         while True:
             if discord_group.discord_bot.DiscordBot.INSTANCE is not None:
-                for item in server_storage.get_all().values():
-                    if item.wrapper is not None and item.get("dc_active") == 1 and item.get("dc_full") == 1 and item.get("dc_id") not in ["", None]:
+                for item in server_storage.get_all():
+                    if item.wrapper is not None and item.dc_active and item.dc_full and item.dc_id not in [0, None]:
                         while item.wrapper is not None and not item.wrapper.output_queue.empty():
-                            discord_group.discord_bot.DiscordBot.INSTANCE.send(int(item.get("dc_id")), item.wrapper.output_queue.get())
+                            discord_group.discord_bot.DiscordBot.INSTANCE.send(int(item.dc_id), item.wrapper.output_queue.get())
             sleep(1)
