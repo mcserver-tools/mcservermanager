@@ -44,16 +44,6 @@ class Manager():
     def add_server(self, name, path):
         server_storage.add(McServer(uid=DBManager.INSTANCE.get_new_uid(), name=name, path=path))
 
-    def change_server_name(self, old_name, new_name):
-        if not any(item[0] == old_name for item in self.servers):
-            raise Exception(f"Server {old_name} can't be found and thus can't be renamed")
-
-        for item in self.servers:
-            if item[0] == old_name:
-                self.servers[self.servers.index(item)] = [new_name, item[1]]
-                config_helper.save_setting(config_helper.FILEPATH, "servers", self.servers)
-                return
-
     def _send_discord_logs(self):
         while True:
             if discord_group.discord_bot.DiscordBot.INSTANCE is not None:
