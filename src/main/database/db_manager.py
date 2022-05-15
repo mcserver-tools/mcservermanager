@@ -5,6 +5,7 @@ from threading import Lock
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+import core.instances as instances
 from database.model import Base, McServer, Discord, JavaVersion
 from dataclass.mcserver import McServer as McServerObj
 
@@ -14,7 +15,7 @@ class DBManager():
     """Class that manages the database"""
 
     def __init__(self):
-        if DBManager.INSTANCE is not None:
+        if instances.DBManager is not None:
             raise Exception("There can only be one instance at a time")
 
         db_connection = sqlalchemy.create_engine("sqlite:///database.db",
@@ -27,9 +28,7 @@ class DBManager():
 
         self.lock = Lock()
 
-        DBManager.INSTANCE = self
-
-    INSTANCE = None
+        instances.DBManager = self
 
     def add_mcserver(self, mcserver_obj: McServerObj):
         """Add a McServer object to the database"""
@@ -107,5 +106,3 @@ class DBManager():
             db_discord.channel_id = mcserver_obj.dc_id
             db_discord.fulllog = mcserver_obj.dc_full
         self.commit()
-
-DBManager()

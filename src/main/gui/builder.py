@@ -7,10 +7,12 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QVBoxLayout,
                              QWidget)
 
+import core.instances as instances
 from gui.gui import GUI
+from gui.dialogs import ServerAddDialog
 
-def build(manager):
-    gui = GUI(manager)
+def build():
+    gui = GUI()
 
     gui.setWindowTitle("McServerManager")
     gui.setStyleSheet("color: #C1C1C1; background-color: #464545;")
@@ -24,7 +26,7 @@ def build(manager):
     widget.setLayout(mainbox)
     gui.setCentralWidget(widget)
 
-    _add_header(mainbox)
+    _add_header(gui, mainbox)
     contentHBox = QHBoxLayout()
     mainbox.addLayout(contentHBox)
     _add_sidebar(gui, contentHBox)
@@ -38,30 +40,31 @@ def build(manager):
 
     return gui
 
-def _add_header(mainbox):
-    headerVBox = QVBoxLayout()
-    mainbox.addLayout(headerVBox)
+def _add_header(gui, mainbox):
+    headerHBox = QHBoxLayout()
+    mainbox.addLayout(headerHBox)
 
     header = QLabel("Minecraft Server Manager")
-    headerVBox.addWidget(header)
+    headerHBox.addWidget(header)
+
+    gui.buttons["add"] = QPushButton("+")
+    gui.buttons["add"].setObjectName("add")
+    gui.buttons["add"].setFixedSize(30, 30)
+    gui.buttons["add"].setStyleSheet("font: 30px")
+    gui.buttons["add"].clicked.connect(lambda *x: ServerAddDialog())
+    gui.buttons["add"].setCheckable(False)
+    headerHBox.addWidget(gui.buttons["add"])
 
 def _add_sidebar(gui, mainbox):
-    sideVBox = QVBoxLayout()
+    gui.server_list_VBox = QVBoxLayout()
+    gui.server_list_VBox.addStretch()
     fixedWidthWidget = QWidget()
     fixedWidthWidget.setFixedWidth(int(gui._min_size.width() / 4))
-    fixedWidthWidget.setLayout(sideVBox)
+    fixedWidthWidget.setLayout(gui.server_list_VBox)
     mainbox.addWidget(fixedWidthWidget)
 
     for key in server_storage.uids():
-        server = server_storage.get(key)
-        gui.buttons[server.uid] = QPushButton(server.name + "\nstopped")
-        gui.buttons[server.uid].setObjectName(str(server.uid))
-        gui.buttons[server.uid].setFixedHeight(50)
-        gui.buttons[server.uid].clicked.connect(gui._button_clicked)
-        gui.buttons[server.uid].setCheckable(True)
-        sideVBox.addWidget(gui.buttons[server.uid])
-
-    sideVBox.addStretch()
+        gui.add_server(key)
 
 def _add_mainarea(gui, mainbox):
     mainVBox = QVBoxLayout()

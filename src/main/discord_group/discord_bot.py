@@ -4,19 +4,21 @@ from discord.ext import commands
 import discord_group.bot_commands as bot_commands
 
 import core.server_storage as server_storage
+import core.instances as instances
 
 class DiscordBot(commands.Bot):
     def __init__(self):
+        if instances.DiscordBot is not None:
+            raise Exception("There is already a discordbot instance")
+
         super().__init__(command_prefix = 'mc.', help_command = None, intents = discord.Intents.all())
 
         self._cogs = [bot_commands]
         for cog in self._cogs:
             cog.setup(self)
 
-    INSTANCE = None
-
     async def on_ready(self):
-        DiscordBot.INSTANCE = self
+        instances.DiscordBot = self
         print(f"{self.user} is now online")
 
     async def on_reaction_add(self, reaction, user):

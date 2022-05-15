@@ -2,16 +2,20 @@ import os
 from threading import Thread
 from time import sleep
 
+from PyQt6.QtCore import QSize
+from PyQt6.QtWidgets import QMainWindow, QPushButton
+
 import core.server_storage as server_storage
 import discord_group.discord_bot
 import helpers.info_getter as info_getter
-from database.db_manager import DBManager
+import core.instances as instances
 from dataclass.mcserver import McServer
-from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QMainWindow
 
 class GUI(QMainWindow):
-    def __init__(self, manager):
+    def __init__(self):
+        if instances.GUI is not None:
+            raise Exception("There is already a gui instance")
+
         super().__init__()
 
         self._min_size = QSize(0, 0)
@@ -19,18 +23,25 @@ class GUI(QMainWindow):
         self.labels = {}
         self.line_edits = {}
         self.check_boxes = {}
+        self.server_list_VBox = None
         self._active_server: McServer = None
-        GUI.MANAGER = manager
-        GUI.INSTANCE = self
 
-    MANAGER = None
-    INSTANCE = None
+        instances.GUI = self
 
     def load_profile(self, server):
         if self._active_server is not None:
             server_storage.save(self._active_server)
         self._active_server = server
         self._load_config()
+
+    def add_server(self, uid):
+        server = server_storage.get(uid)
+        self.buttons[server.uid] = QPushButton(server.name + "\nstopped")
+        self.buttons[server.uid].setObjectName(str(server.uid))
+        self.buttons[server.uid].setFixedHeight(50)
+        self.buttons[server.uid].clicked.connect(self._button_clicked)
+        self.buttons[server.uid].setCheckable(True)
+        self.server_list_VBox.insertWidget(self.server_list_VBox.count()-1, self.buttons[server.uid])
 
     def _load_config(self):
         server = server_storage.get(self._active_server.uid)
@@ -90,7 +101,7 @@ class GUI(QMainWindow):
 
     def _name_changed(self, text):
         self._active_server.name = text
-        DBManager.INSTANCE.add_mcserver(self._active_server)
+        instances.DBManager.add_mcserver(self._active_server)
         self.buttons[self._active_server.uid].setText(text + "\n" + self.buttons[self._active_server.uid].text().split("\n")[1])
 
     def _port_changed(self, text):
@@ -112,10 +123,10 @@ class GUI(QMainWindow):
         self._active_server.java = text
 
     def _dcbot_toggled(self):
-        if discord_group.discord_bot.DiscordBot.INSTANCE is None:
+        if instances.DiscordBot is None:
             Thread(target=discord_group.discord_bot.DiscordBot().start_bot, daemon=True).start()
         else:
-            discord_group.discord_bot.DiscordBot.INSTANCE.stop()
+            instances.DiscordBot.stop()
 
     def _dcbot_server_toggled(self):
         self._active_server.dc_active = int(self.check_boxes["dc_active"].isChecked())
@@ -152,7 +163,7 @@ class GUI(QMainWindow):
 
         main_cwd = os.getcwd()
         os.chdir(self._active_server.path)
-        self._active_server.wrapper = GUI.MANAGER.wrapper_module.Wrapper(output=False, args=cmd)
+        self._active_server.wrapper = instances.Manager.wrapper_module.Wrapper(output=False, args=cmd)
         server_storage.save(self._active_server)
         self._active_server.wrapper.startup()
         os.chdir(main_cwd)
