@@ -1,3 +1,4 @@
+import shutil
 from PyQt6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QVBoxLayout)
 
@@ -106,17 +107,17 @@ class ServerRemoveDialog(QDialog):
         buttonsHBox = QHBoxLayout()
 
         remove_button = QPushButton("Remove")
-        remove_button.setFixedWidth(60)
+        remove_button.setFixedWidth(80)
         remove_button.setCheckable(False)
         remove_button.clicked.connect(self._remove_button)
 
-        rem_del_button = QPushButton("Remove & Delete")
-        rem_del_button.setFixedWidth(60)
+        rem_del_button = QPushButton("Delete")
+        rem_del_button.setFixedWidth(80)
         rem_del_button.setCheckable(False)
         rem_del_button.clicked.connect(self._rem_del_button)
 
         cancel_button = QPushButton("Cancel")
-        cancel_button.setFixedWidth(60)
+        cancel_button.setFixedWidth(80)
         cancel_button.setCheckable(False)
         cancel_button.clicked.connect(self.deleteLater)
 
@@ -130,5 +131,7 @@ class ServerRemoveDialog(QDialog):
         self.deleteLater()
 
     def _rem_del_button(self):
-
+        path = instances.GUI._active_server.path
+        instances.Manager.remove_server(instances.GUI._active_server.uid)
+        shutil.rmtree(path, ignore_errors=True)
         self.deleteLater()
