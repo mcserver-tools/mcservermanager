@@ -92,14 +92,22 @@ def _add_overview_area(gui, mainVBox):
     gui.labels["name"] = QLabel("Server name:")
     gui.line_edits["name"] = QLineEdit()
     gui.line_edits["name"].textChanged.connect(gui._name_changed)
-    nameHBox.addWidget(gui.labels["name"])
-    nameHBox.addWidget(gui.line_edits["name"])
+
+    labelHBox = QHBoxLayout()
+    gui.labels["uid_name"] = QLabel("uid:")
+    gui.labels["uid"] = QLabel()
+    labelHBox.addWidget(gui.labels["uid_name"])
+    labelHBox.addWidget(gui.labels["uid"])
 
     gui.buttons["start"] = QPushButton("Start")
     gui.buttons["start"].setObjectName("start")
     gui.buttons["start"].setFixedWidth(80)
     gui.buttons["start"].clicked.connect(gui._start_button_clicked)
     gui.buttons["start"].setCheckable(False)
+
+    nameHBox.addWidget(gui.labels["name"])
+    nameHBox.addWidget(gui.line_edits["name"])
+    nameHBox.addLayout(labelHBox)
     nameHBox.addWidget(gui.buttons["start"])
     overviewVBox.addLayout(nameHBox)
 

@@ -44,10 +44,11 @@ class GUI(QMainWindow):
         self.server_list_VBox.insertWidget(self.server_list_VBox.count()-1, self.buttons[server.uid])
 
     def _load_config(self):
-        server = server_storage.get(self._active_server.uid)
+        server = self._active_server
 
-        self.line_edits["name"].setText(self._active_server.name)
-        self.labels["path"].setText(self._active_server.path)
+        self.line_edits["name"].setText(server.name)
+        self.labels["uid"].setText(str(server.uid))
+        self.labels["path"].setText(server.path)
 
         try:
             self.line_edits["port"].setText(str(server.port) if server.port != 25565 else "")

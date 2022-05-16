@@ -1,8 +1,45 @@
 import shutil
+from threading import Thread
 from PyQt6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QVBoxLayout)
 
 import core.instances as instances
+
+class ConfirmDialog(QDialog):
+    def __init__(self, msg, func) -> None:
+        super().__init__()
+
+        self.func = func
+
+        self.setWindowTitle("Confirm")
+
+        mainBox = QVBoxLayout()
+        msg_label = QLabel(msg)
+        mainBox.addWidget(msg_label)
+        self._add_labels(mainBox)
+        self.setLayout(mainBox)
+        self.exec()
+
+    def _add_labels(self, mainBox):
+        buttonsHBox = QHBoxLayout()
+
+        continue_button = QPushButton("Continue")
+        continue_button.setFixedWidth(60)
+        continue_button.setCheckable(False)
+        continue_button.clicked.connect(self._continue)
+
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setFixedWidth(60)
+        cancel_button.setCheckable(False)
+        cancel_button.clicked.connect(self.deleteLater)
+
+        buttonsHBox.addWidget(continue_button)
+        buttonsHBox.addWidget(cancel_button)
+        mainBox.addLayout(buttonsHBox)
+
+    def _continue(self):
+        self.func()
+        self.deleteLater()
 
 class ServerAddDialog(QDialog):
     def __init__(self) -> None:
@@ -114,7 +151,7 @@ class ServerRemoveDialog(QDialog):
         rem_del_button = QPushButton("Delete")
         rem_del_button.setFixedWidth(80)
         rem_del_button.setCheckable(False)
-        rem_del_button.clicked.connect(self._rem_del_button)
+        rem_del_button.clicked.connect(lambda *x: ConfirmDialog("This action will DELETE the minecraft server from your drive.\nThis action is IRREVERSIBLE. Continue?", self._rem_del_button))
 
         cancel_button = QPushButton("Cancel")
         cancel_button.setFixedWidth(80)
