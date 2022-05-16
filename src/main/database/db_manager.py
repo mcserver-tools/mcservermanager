@@ -85,6 +85,8 @@ class DBManager():
 
     def remove_mcserver(self, uid: int):
         with self.lock:
+            uid = self.session.query(McServer).filter(McServer.uid==uid).first().uid
+            self.session.query(Discord).filter(Discord.mcserver_id==uid).delete()
             self.session.query(McServer).filter(McServer.uid==uid).delete()
         self.commit()
 
@@ -95,7 +97,7 @@ class DBManager():
                 self.lock.release()
                 return self.add_mcserver(mcserver_obj)
             db_srv.name = mcserver_obj.name
-            db_srv.port = mcserver_obj.path
+            db_srv.path = mcserver_obj.path
             db_srv.port = mcserver_obj.port
             db_srv.jar = mcserver_obj.jar
             db_srv.max_players = mcserver_obj.max_players

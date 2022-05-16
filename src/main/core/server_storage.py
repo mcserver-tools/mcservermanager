@@ -35,6 +35,10 @@ def save(mcserver: McServer) -> None:
     _storage[mcserver.uid] = mcserver.wrapper
     instances.DBManager.save_mcserver(mcserver)
 
+def remove(uid: int) -> None:
+    instances.DBManager.remove_mcserver(uid)
+    del _storage[uid]
+
 def uids() -> list[int]:
     return [item for item in _storage.keys()]
 

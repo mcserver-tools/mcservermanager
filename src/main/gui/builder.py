@@ -7,9 +7,10 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QVBoxLayout,
                              QWidget)
 
-import core.instances as instances
+import core.server_storage as server_storage
 from gui.gui import GUI
-from gui.dialogs import ServerAddDialog
+from gui.dialogs import ServerChooseDialog
+from gui.dialogs import ServerAddDialog, ServerRemoveDialog
 
 def build():
     gui = GUI()
@@ -31,6 +32,9 @@ def build():
     mainbox.addLayout(contentHBox)
     _add_sidebar(gui, contentHBox)
     _add_mainarea(gui, contentHBox)
+
+    if server_storage.uids() == []:
+        ServerChooseDialog()
 
     gui.load_profile(server_storage.get(server_storage.uids()[0]))
 
@@ -91,12 +95,12 @@ def _add_overview_area(gui, mainVBox):
     nameHBox.addWidget(gui.labels["name"])
     nameHBox.addWidget(gui.line_edits["name"])
 
-    gui.buttons["export"] = QPushButton("Export")
-    gui.buttons["export"].setObjectName("export")
-    gui.buttons["export"].setFixedWidth(80)
-    gui.buttons["export"].clicked.connect(lambda *x: print("export button clicked"))
-    gui.buttons["export"].setCheckable(False)
-    nameHBox.addWidget(gui.buttons["export"])
+    gui.buttons["start"] = QPushButton("Start")
+    gui.buttons["start"].setObjectName("start")
+    gui.buttons["start"].setFixedWidth(80)
+    gui.buttons["start"].clicked.connect(gui._start_button_clicked)
+    gui.buttons["start"].setCheckable(False)
+    nameHBox.addWidget(gui.buttons["start"])
     overviewVBox.addLayout(nameHBox)
 
     pathHBox = QHBoxLayout()
@@ -108,7 +112,7 @@ def _add_overview_area(gui, mainVBox):
     gui.buttons["path"] = QPushButton("Set Path")
     gui.buttons["path"].setObjectName("path")
     gui.buttons["path"].setFixedWidth(80)
-    gui.buttons["path"].clicked.connect(lambda *x: print("path button clicked"))
+    gui.buttons["path"].clicked.connect(gui._pathbutton_clicked)
     gui.buttons["path"].setCheckable(False)
     pathHBox.addWidget(gui.buttons["path"])
     overviewVBox.addLayout(pathHBox)
@@ -129,16 +133,16 @@ def _add_overview_area(gui, mainVBox):
     maxplayersHBox.addWidget(gui.labels["maxplayers"])
     maxplayersHBox.addWidget(gui.line_edits["maxplayers"])
 
-    gui.buttons["start"] = QPushButton("Start")
-    gui.buttons["start"].setObjectName("start")
-    gui.buttons["start"].setFixedWidth(80)
-    gui.buttons["start"].clicked.connect(gui._start_button_clicked)
-    gui.buttons["start"].setCheckable(False)
+    gui.buttons["remove"] = QPushButton("Remove")
+    gui.buttons["remove"].setObjectName("remove")
+    gui.buttons["remove"].setFixedWidth(80)
+    gui.buttons["remove"].clicked.connect(lambda *x: ServerRemoveDialog())
+    gui.buttons["remove"].setCheckable(False)
 
     port_maxplayers_HBox = QHBoxLayout()
     port_maxplayers_HBox.addLayout(portHBox)
     port_maxplayers_HBox.addLayout(maxplayersHBox)
-    port_maxplayers_HBox.addWidget(gui.buttons["start"])
+    port_maxplayers_HBox.addWidget(gui.buttons["remove"])
     overviewVBox.addLayout(port_maxplayers_HBox)
 
 def _add_whitelist_area(gui, mainVBox):

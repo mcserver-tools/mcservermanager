@@ -3,7 +3,7 @@ from threading import Thread
 from time import sleep
 
 from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QMainWindow, QPushButton
+from PyQt6.QtWidgets import QMainWindow, QPushButton, QFileDialog
 
 import core.server_storage as server_storage
 import discord_group.discord_bot
@@ -39,7 +39,7 @@ class GUI(QMainWindow):
         self.buttons[server.uid] = QPushButton(server.name + "\nstopped")
         self.buttons[server.uid].setObjectName(str(server.uid))
         self.buttons[server.uid].setFixedHeight(50)
-        self.buttons[server.uid].clicked.connect(self._button_clicked)
+        self.buttons[server.uid].clicked.connect(self._serverbutton_clicked)
         self.buttons[server.uid].setCheckable(True)
         self.server_list_VBox.insertWidget(self.server_list_VBox.count()-1, self.buttons[server.uid])
 
@@ -137,13 +137,19 @@ class GUI(QMainWindow):
     def _dcbot_id_changed(self, text):
         self._active_server.dc_id = text
 
-    def _button_clicked(self):
+    def _serverbutton_clicked(self):
         serveruid = int(self.sender().objectName())
         if serveruid != self._active_server.uid:
             self.buttons[self._active_server.uid].setChecked(False)
             self.load_profile(server_storage.get(serveruid))
         else:
             self.buttons[self._active_server.uid].setChecked(True)
+
+    def _pathbutton_clicked(self):
+        new_path = QFileDialog.getExistingDirectory(caption="Select the server folder")
+        self._active_server.path = new_path
+        self.labels["path"].setText(new_path)
+        server_storage.save(self._active_server)
 
     def _start_button_clicked(self):
         if self.buttons["start"].text() == "Start":

@@ -44,6 +44,15 @@ class Manager():
         server_storage.add(McServer(uid=uid, name=name, path=path))
         instances.GUI.add_server(uid)
 
+    def remove_server(self, uid):
+        server_storage.remove(uid)
+        instances.GUI.buttons[uid].deleteLater()
+        del instances.GUI.buttons[uid]
+        instances.GUI._active_server = None
+        new_uid = server_storage.uids()[0]
+        instances.GUI.load_profile(server_storage.get(new_uid))
+        instances.GUI.buttons[new_uid].setChecked(True)
+ 
     def _send_discord_logs(self):
         while True:
             if instances.DiscordBot is not None:
