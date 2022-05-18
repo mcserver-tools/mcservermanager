@@ -24,6 +24,14 @@ def get(uid: int) -> McServer:
     srv.wrapper = _storage[uid]
     return srv
 
+def get_by_name(name: str) -> McServer:
+    if not isinstance(name, str):
+        raise TypeError(f"Expected str, got {type(name)}")
+
+    srv = instances.DBManager.get_mcserver_by_name(name)
+    srv.wrapper = _storage[srv.uid]
+    return srv
+
 def get_all() -> list[McServer]:
     servers = []
     for item in instances.DBManager.get_mcservers():

@@ -1,4 +1,5 @@
 import asyncio
+import cmd
 import discord
 from discord.ext import commands
 import discord_group.bot_commands as bot_commands
@@ -27,7 +28,7 @@ class DiscordBot(commands.Bot):
         await self.cogs["BotCommands"].on_reaction(reaction, user)
 
     async def on_message(self, message):
-        if message.author.id == self.user.id:
+        if message.author.id == self.user.id or message.content.startswith("mc."):
             return await super().on_message(message)
 
         mcserver = None

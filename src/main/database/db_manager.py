@@ -1,6 +1,7 @@
 """Module for managing the database"""
 
 from threading import Lock
+from typing import List
 
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -30,7 +31,7 @@ class DBManager():
 
         instances.DBManager = self
 
-    def add_mcserver(self, mcserver_obj: McServerObj):
+    def add_mcserver(self, mcserver_obj: McServerObj) -> None:
         """Add a McServer object to the database"""
 
         with self.lock:
@@ -43,13 +44,13 @@ class DBManager():
 
         self.commit()
 
-    def add_javaversion(self, name: str, path: str):
+    def add_javaversion(self, name: str, path: str) -> None:
         with self.lock:
             new_javaversion = JavaVersion(name=name, path=path)
             self.session.add(new_javaversion)
         self.commit()
 
-    def commit(self):
+    def commit(self) -> None:
         """Commits changes to database"""
 
         with self.lock:
@@ -58,7 +59,7 @@ class DBManager():
             except sqlalchemy.exc.IntegrityError:
                 self.session.rollback()
 
-    def get_mcserver(self, uid: int):
+    def get_mcserver(self, uid: int) -> McServerObj:
         with self.lock:
             saved = self.session.query(McServer).filter(McServer.uid==uid).first()
             if saved is None:
@@ -66,31 +67,38 @@ class DBManager():
             javapath = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==saved.javaversion_id).first().path
             return McServerObj(uid=saved.uid, name=saved.name, path=saved.path, port=saved.port, max_players=saved.max_players, ram=saved.ram, jar=saved.jar, whitelist=saved.whitelist, javapath=javapath, dc_active=saved.discord.active, dc_id=saved.discord.channel_id, dc_full=saved.discord.fulllog)
 
-    def get_mcservers(self):
+    def get_mcserver_by_name(self, name: str) -> McServerObj:
+        with self.lock:
+            saved = self.session.query(McServer).filter(McServer.name==name).first()
+            if saved is None:
+                raise KeyError(f"McServer database entry with name '{name}' can't be found")
+            return saved
+
+    def get_mcservers(self) -> List[McServerObj]:
         """Returns all McServer objects in the database"""
 
         with self.lock:
             ret_list = [McServerObj(saved.uid, saved.name, saved.path, saved.port, saved.max_players, saved.ram, saved.jar, saved.whitelist, self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==saved.javaversion_id).first().path, saved.discord.active, saved.discord.channel_id, saved.discord.fulllog) for saved in self.session.query(McServer).all()]
         return ret_list
 
-    def get_number_of_mcservers(self):
+    def get_number_of_mcservers(self) -> int:
         """Returns the number of McServer objects in the database"""
 
         return self.session.query(McServer).count()
 
-    def get_new_uid(self):
+    def get_new_uid(self) -> int:
         if self.get_number_of_mcservers() == 0:
             return 1
         return self.session.query(McServer).order_by(McServer.mcserver_id.desc()).first().mcserver_id + 1
 
-    def remove_mcserver(self, uid: int):
+    def remove_mcserver(self, uid: int) -> None:
         with self.lock:
             uid = self.session.query(McServer).filter(McServer.uid==uid).first().uid
             self.session.query(Discord).filter(Discord.mcserver_id==uid).delete()
             self.session.query(McServer).filter(McServer.uid==uid).delete()
         self.commit()
 
-    def save_mcserver(self, mcserver_obj: McServerObj):
+    def save_mcserver(self, mcserver_obj: McServerObj) -> None:
         with self.lock:
             db_srv: McServer = self.session.query(McServer).filter(McServer.uid==mcserver_obj.uid).first()
             if db_srv is None:

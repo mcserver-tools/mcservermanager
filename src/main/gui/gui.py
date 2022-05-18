@@ -46,6 +46,17 @@ class GUI(QMainWindow):
     def _load_config(self):
         server = self._active_server
 
+        self._load_overview(server)
+        self._load_whitelist(server)
+        self._load_startup(server)
+        self._load_discord(server)
+
+        if server.wrapper is not None:
+            self.buttons["start"].setText("Stop")
+        else:
+            self.buttons["start"].setText("Start")
+
+    def _load_overview(self, server):
         self.line_edits["name"].setText(server.name)
         self.labels["uid"].setText(str(server.uid))
         self.labels["path"].setText(server.path)
@@ -60,11 +71,13 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self.line_edits["maxplayers"].setText("")
 
+    def _load_whitelist(self, server):
         try:
             self.line_edits["whitelist"].setText(server.whitelist)
         except (KeyError, FileNotFoundError):
             self.line_edits["whitelist"].setText("")
 
+    def _load_startup(self, server):
         try:
             self.line_edits["ram"].setText(server.ram if server.ram != "4G" else "")
         except (KeyError, FileNotFoundError):
@@ -80,6 +93,7 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self.line_edits["java"].setText("")
 
+    def _load_discord(self, server):
         try:
             self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != 0 else "")
         except (KeyError, FileNotFoundError):
@@ -94,11 +108,6 @@ class GUI(QMainWindow):
             self.check_boxes["dc_active"].setChecked(bool(server.dc_active))
         except (KeyError, FileNotFoundError):
             self.check_boxes["dc_active"].setChecked(False)
-
-        if server.wrapper is not None:
-            self.buttons["start"].setText("Stop")
-        else:
-            self.buttons["start"].setText("Start")
 
     def _name_changed(self, text):
         self._active_server.name = text
