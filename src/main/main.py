@@ -7,6 +7,5 @@ if __name__ == "__main__":
 
     import core.instances as instances
 
-    instances.DBManager.add_javaversion("Java 17", "java")
     instances.Manager.setup()
     instances.Manager.run()

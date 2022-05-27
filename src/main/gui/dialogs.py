@@ -1,7 +1,9 @@
+import os
+import re
 import shutil
-from threading import Thread
+import subprocess
 from PyQt6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QVBoxLayout)
+                             QLineEdit, QPushButton, QVBoxLayout, QComboBox)
 
 import core.instances as instances
 
@@ -40,6 +42,27 @@ class ConfirmDialog(QDialog):
     def _continue(self):
         self.func()
         self.deleteLater()
+
+class WarnDialog(QDialog):
+    def __init__(self, msg) -> None:
+        super().__init__()
+
+        self.setWindowTitle("Warning")
+
+        mainBox = QVBoxLayout()
+        msg_label = QLabel(msg)
+        mainBox.addWidget(msg_label)
+        self._add_labels(mainBox)
+        self.setLayout(mainBox)
+        self.exec()
+
+    def _add_labels(self, mainBox):
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedWidth(60)
+        ok_button.setCheckable(False)
+        ok_button.clicked.connect(self.deleteLater)
+
+        mainBox.addWidget(ok_button)
 
 class ServerAddDialog(QDialog):
     def __init__(self) -> None:
@@ -172,3 +195,55 @@ class ServerRemoveDialog(QDialog):
         instances.Manager.remove_server(instances.GUI._active_server.uid)
         shutil.rmtree(path, ignore_errors=True)
         self.deleteLater()
+
+class JavaOptionsDialog(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self._java_combobox = None
+
+        self.setWindowTitle("Java settings")
+
+        self._add_labels()
+        self.exec()
+
+    def _add_labels(self):
+        mainVBox = QVBoxLayout()
+
+        java_HBox = QHBoxLayout()
+        java_label = QLabel("Java Versions:")
+        self._java_combobox = QComboBox()
+
+        for item in instances.DBManager.get_javaversions():
+            self._java_combobox.addItem(item[0])
+
+        java_HBox.addWidget(java_label)
+        java_HBox.addWidget(self._java_combobox)
+
+        search_button = QPushButton("Search")
+        search_button.setFixedWidth(80)
+        search_button.setCheckable(False)
+        search_button.clicked.connect(self._search_button)
+
+        mainVBox.addLayout(java_HBox)
+        mainVBox.addWidget(search_button)
+        self.setLayout(mainVBox)
+
+    def _search_button(self):
+        print(instances.GUI._active_server.javapath)
+
+        instances.Manager.save_javaversions()
+
+        self._java_combobox.clear()
+        for item in instances.DBManager.get_javaversions():
+            self._java_combobox.addItem(item[0])
+
+        instances.GUI.combo_boxes["java"].clear()
+        for item in instances.DBManager.get_javaversions():
+            instances.GUI.combo_boxes["java"].addItem(item[0])
+        java_name = instances.DBManager.get_javaname(instances.GUI._active_server.javapath)
+        print(instances.GUI._active_server.javapath)
+        print(java_name)
+        index = instances.GUI.combo_boxes["java"].findText(java_name)
+        print(index)
+        instances.GUI.combo_boxes["java"].setCurrentIndex(index)

@@ -23,6 +23,7 @@ class GUI(QMainWindow):
         self.labels = {}
         self.line_edits = {}
         self.check_boxes = {}
+        self.combo_boxes = {}
         self.server_list_VBox = None
         self._active_server: McServer = None
 
@@ -56,7 +57,7 @@ class GUI(QMainWindow):
         else:
             self.buttons["start"].setText("Start")
 
-    def _load_overview(self, server):
+    def _load_overview(self, server: McServer):
         self.line_edits["name"].setText(server.name)
         self.labels["uid"].setText(str(server.uid))
         self.labels["path"].setText(server.path)
@@ -71,13 +72,13 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self.line_edits["maxplayers"].setText("")
 
-    def _load_whitelist(self, server):
+    def _load_whitelist(self, server: McServer):
         try:
             self.line_edits["whitelist"].setText(server.whitelist)
         except (KeyError, FileNotFoundError):
             self.line_edits["whitelist"].setText("")
 
-    def _load_startup(self, server):
+    def _load_startup(self, server: McServer):
         try:
             self.line_edits["ram"].setText(server.ram if server.ram != "4G" else "")
         except (KeyError, FileNotFoundError):
@@ -89,11 +90,16 @@ class GUI(QMainWindow):
             self.line_edits["jar"].setText("")
 
         try:
-            self.line_edits["java"].setText(server.javapath if server.javapath != "java" else "")
+            javaname = instances.DBManager.get_javaname(server.javapath)
+            index = self.combo_boxes["java"].findText(javaname)
+            if index >= 0:
+                self.combo_boxes["java"].setCurrentIndex(index)
+            else:
+                self.combo_boxes["java"].setCurrentIndex(0)
         except (KeyError, FileNotFoundError):
-            self.line_edits["java"].setText("")
+            self.combo_boxes["java"].setCurrentIndex(0)
 
-    def _load_discord(self, server):
+    def _load_discord(self, server: McServer):
         try:
             self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != 0 else "")
         except (KeyError, FileNotFoundError):
@@ -130,7 +136,8 @@ class GUI(QMainWindow):
         self._active_server.jar = text
 
     def _java_changed(self, text):
-        self._active_server.java = text
+        if text != "":
+            self._active_server.javapath = instances.DBManager.get_javaversion(text)
 
     def _dcbot_toggled(self):
         if instances.DiscordBot is None:

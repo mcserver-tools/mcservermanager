@@ -3,14 +3,15 @@ from threading import Thread
 
 import core.server_storage as server_storage
 from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QVBoxLayout,
-                             QWidget)
+                             QWidget, QComboBox)
 
 import core.server_storage as server_storage
+import gui.dialogs as dialogs
+import core.instances as instances
 from gui.gui import GUI
-from gui.dialogs import ServerChooseDialog
-from gui.dialogs import ServerAddDialog, ServerRemoveDialog
 
 def build():
     gui = GUI()
@@ -34,7 +35,7 @@ def build():
     _add_mainarea(gui, contentHBox)
 
     if server_storage.uids() == []:
-        ServerChooseDialog()
+        dialogs.ServerChooseDialog()
 
     gui.load_profile(server_storage.get(server_storage.uids()[0]))
 
@@ -55,9 +56,17 @@ def _add_header(gui, mainbox):
     gui.buttons["add"].setObjectName("add")
     gui.buttons["add"].setFixedSize(30, 30)
     gui.buttons["add"].setStyleSheet("font: 30px")
-    gui.buttons["add"].clicked.connect(lambda *x: ServerAddDialog())
+    gui.buttons["add"].clicked.connect(lambda *x: dialogs.ServerAddDialog())
     gui.buttons["add"].setCheckable(False)
+
+    gui.buttons["java"] = QPushButton(icon=QIcon("/icons/java.png"))
+    gui.buttons["java"].setObjectName("java")
+    gui.buttons["java"].setFixedSize(30, 30)
+    gui.buttons["java"].clicked.connect(lambda *x: dialogs.JavaOptionsDialog())
+    gui.buttons["java"].setCheckable(False)
+
     headerHBox.addWidget(gui.buttons["add"])
+    headerHBox.addWidget(gui.buttons["java"])
 
 def _add_sidebar(gui, mainbox):
     gui.server_list_VBox = QVBoxLayout()
@@ -144,7 +153,7 @@ def _add_overview_area(gui, mainVBox):
     gui.buttons["remove"] = QPushButton("Remove")
     gui.buttons["remove"].setObjectName("remove")
     gui.buttons["remove"].setFixedWidth(80)
-    gui.buttons["remove"].clicked.connect(lambda *x: ServerRemoveDialog())
+    gui.buttons["remove"].clicked.connect(lambda *x: dialogs.ServerRemoveDialog())
     gui.buttons["remove"].setCheckable(False)
 
     port_maxplayers_HBox = QHBoxLayout()
@@ -191,11 +200,12 @@ def _add_startup_area(gui, mainVBox):
 
     javaHBox = QHBoxLayout()
     gui.labels["java"] = QLabel("Java executable:")
-    gui.line_edits["java"] = QLineEdit()
-    gui.line_edits["java"].setPlaceholderText(os.popen("where java").read().split("\n")[0])
-    gui.line_edits["java"].textChanged.connect(gui._java_changed)
+    gui.combo_boxes["java"] = QComboBox()
+    for item in instances.DBManager.get_javaversions():
+        gui.combo_boxes["java"].addItem(item[0])
+    gui.combo_boxes["java"].currentTextChanged.connect(gui._java_changed)
     javaHBox.addWidget(gui.labels["java"])
-    javaHBox.addWidget(gui.line_edits["java"])
+    javaHBox.addWidget(gui.combo_boxes["java"])
 
     ram_jar_HBox = QHBoxLayout()
     ram_jar_HBox.addLayout(ramHBox)

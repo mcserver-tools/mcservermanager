@@ -21,8 +21,8 @@ class McServer():
             raise TypeError(f"uid has to be int, but is {type(self.uid)}")
 
     def get_start_command(self) -> str:
-        params = [("java", self.javapath), ("jar", self.jar), ("ram", self.ram), ("port", self.port), ("maxp", self.max_players), ("whitelist", self._whitelist_str())]
-        cmd = ""
+        params = [("jar", self.jar), ("ram", self.ram), ("port", self.port), ("maxp", self.max_players), ("whitelist", self._whitelist_str())]
+        cmd = f'-java "{self.javapath}"'
 
         for param in params:
             try:

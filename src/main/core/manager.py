@@ -1,5 +1,7 @@
 import importlib
 import os
+import re
+import subprocess
 import sys
 from threading import Thread
 from time import sleep
@@ -11,6 +13,7 @@ from PyQt6.QtWidgets import QApplication
 
 import core.instances as instances
 import core.server_storage as server_storage
+from gui.dialogs import WarnDialog
 
 class Manager():
     def __init__(self) -> None:
@@ -28,6 +31,11 @@ class Manager():
     def setup(self):
         if not os.path.exists("./servers"):
             os.mkdir("./servers")
+
+        if instances.DBManager.get_javaversions() == []:
+            self.save_javaversions()
+
+        server_storage.setup()
 
     def run(self):
         app = QApplication([])
@@ -53,6 +61,48 @@ class Manager():
         instances.GUI.load_profile(server_storage.get(new_uid))
         instances.GUI.buttons[new_uid].setChecked(True)
  
+    def save_javaversions(self):
+        found_javaversions = self._get_javaversions()
+        saved_javaversions = instances.DBManager.get_javaversions()
+        new_versions = [item for item in found_javaversions if item not in saved_javaversions]
+        for item in new_versions:
+            instances.DBManager.add_javaversion(item[0], item[1])
+
+    def _get_javaversions(self):
+        java_versions = []
+
+        if subprocess.run("where java", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 1:
+            WarnDialog("No Java installation found")
+            return
+
+        java_versions.append((f"Java {self._get_version_name('java')}", 'java'))
+
+        drive_letter = subprocess.run("where java", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode("utf-8").split("\n", maxsplit=1)[0][0]
+        java_dir = f"{drive_letter}:\Program Files\Java"
+
+        version_foldernames = []
+        for item in os.listdir(java_dir):
+            if not item.startswith("jre"):
+                version_foldernames.append(item)
+
+        for item in version_foldernames:
+            java_exe_path = f"{java_dir}\\{item}\\bin\\java.exe"
+            if os.path.exists(java_exe_path):
+                java_versions.append((f"Java {self._get_version_name(java_exe_path)}", java_exe_path))
+
+        return java_versions
+
+    def _get_version_name(self, path):
+        obj = subprocess.run(f'"{path}" --version', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if obj.stderr == b'':
+            version_output_full = obj.stdout.decode("utf-8")
+        else:
+            # for older java versions
+            obj = subprocess.run(f'"{path}" -version', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            version_output_full = obj.stderr.decode("utf-8")
+
+        return re.search(r"[0-9]+\.[0-9]+\.[0-9]+_*[0-9]*\s*", version_output_full).group()
+
     def _send_discord_logs(self):
         while True:
             if instances.DiscordBot is not None:
