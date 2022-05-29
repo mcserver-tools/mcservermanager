@@ -14,6 +14,8 @@ class DiscordBot(commands.Bot):
 
         super().__init__(command_prefix = 'mc.', help_command = None, intents = discord.Intents.all())
 
+        self._messages = {}
+
         self._cogs = [bot_commands]
         for cog in self._cogs:
             cog.setup(self)
@@ -59,5 +61,10 @@ class DiscordBot(commands.Bot):
         DiscordBot.INSTANCE = None
 
     def send(self, channel_id, text):
-        send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text), self.loop)
-        send_fut.result()
+        if channel_id in self._messages.keys() and len(self._messages[channel_id].content) + 2 + len(text) < 2000:
+            new_text = f"{self._messages[channel_id].content}\n{text}"
+            edit_fut = asyncio.run_coroutine_threadsafe(self._messages[channel_id].edit(content=new_text), self.loop)
+            edit_fut.result()
+        else:
+            send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text), self.loop)
+            self._messages[channel_id] = send_fut.result()
