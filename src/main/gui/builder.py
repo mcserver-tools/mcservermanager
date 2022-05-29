@@ -37,7 +37,7 @@ def build():
     if server_storage.uids() == []:
         dialogs.ServerChooseDialog()
 
-    gui.load_profile(server_storage.get(server_storage.uids()[0]))
+    gui.load_profile(server_storage.uids()[0])
 
     gui.buttons[gui._active_server.uid].setChecked(True)
 

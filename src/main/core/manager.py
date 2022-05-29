@@ -52,6 +52,39 @@ class Manager():
         server_storage.add(McServer(uid=uid, name=name, path=path))
         instances.GUI.add_server(uid)
 
+    def start_server(self, uid):
+        server = server_storage.get(uid)
+        cmd = server.get_start_command()
+
+        instances.GUI.buttons[server.uid].setText(f"{server.name}\nstarting...")
+
+        print(f"Starting {server.name} with the following args:")
+        print(cmd)
+
+        main_cwd = os.getcwd()
+        os.chdir(server.path)
+        server.wrapper = instances.Manager.wrapper_module.Wrapper(output=False, args=cmd)
+        server_storage.save(server)
+        instances.GUI._active_server.wrapper = server.wrapper
+        server.wrapper.startup()
+        os.chdir(main_cwd)
+
+        instances.GUI.load_profile(server.uid)
+        instances.GUI.buttons[server.uid].setText(f"{server.name}\nonline (0/{server.max_players})")
+
+    def stop_server(self, uid):
+        server = server_storage.get(uid)
+
+        instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopping...")
+
+        server.wrapper.stop()
+        sleep(5)
+
+        server.wrapper = None
+        instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopped")
+        server_storage.save(server)
+        instances.GUI.load_profile(server.uid)
+
     def remove_server(self, uid):
         server_storage.remove(uid)
         instances.GUI.buttons[uid].deleteLater()

@@ -29,10 +29,15 @@ class GUI(QMainWindow):
 
         instances.GUI = self
 
-    def load_profile(self, server):
+    def load_profile(self, uid):
         if self._active_server is not None:
             server_storage.save(self._active_server)
-        self._active_server = server
+
+        for item in server_storage.uids():
+            self.buttons[item].setChecked(False)
+        self.buttons[uid].setChecked(True)
+
+        self._active_server = server_storage.get(uid)
         self._load_config()
 
     def add_server(self, uid):
@@ -155,10 +160,9 @@ class GUI(QMainWindow):
         self._active_server.dc_id = text
 
     def _serverbutton_clicked(self):
-        serveruid = int(self.sender().objectName())
-        if serveruid != self._active_server.uid:
-            self.buttons[self._active_server.uid].setChecked(False)
-            self.load_profile(server_storage.get(serveruid))
+        uid = int(self.sender().objectName())
+        if uid != self._active_server.uid:
+            self.load_profile(uid)
         else:
             self.buttons[self._active_server.uid].setChecked(True)
 
@@ -170,43 +174,11 @@ class GUI(QMainWindow):
 
     def _start_button_clicked(self):
         if self.buttons["start"].text() == "Start":
-            Thread(target=self._start_server).start()
+            Thread(target=instances.Manager.start_server, args=(self._active_server.uid,)).start()
         elif self.buttons["start"].text() == "Stop":
-            Thread(target=self._stop_server).start()
+            Thread(target=instances.Manager.stop_server, args=(self._active_server.uid,)).start()
         else:
             raise Exception(f"start_button is in false state {self.buttons['start'].text()}")
-
-    def _start_server(self):
-        cmd = self._active_server.get_start_command()
-
-        self.buttons[self._active_server.uid].setText(f"{self._active_server.name}\nstarting...")
-
-        print(f"Starting {self._active_server.name} with the following args:")
-        print(cmd)
-
-        main_cwd = os.getcwd()
-        os.chdir(self._active_server.path)
-        self._active_server.wrapper = instances.Manager.wrapper_module.Wrapper(output=False, args=cmd)
-        server_storage.save(self._active_server)
-        self._active_server.wrapper.startup()
-        os.chdir(main_cwd)
-
-        self.buttons[self._active_server.uid].setText(f"{self._active_server.name}\nonline (0/{self._active_server.max_players})")
-        self.buttons["start"].setText("Stop")
-
-    def _stop_server(self):
-        server = server_storage.get(self._active_server.uid)
-
-        self.buttons[self._active_server.uid].setText(f"{self._active_server.name}\nstopping...")
-
-        server.wrapper.stop()
-        sleep(5)
-
-        server.wrapper = None
-        self.buttons[self._active_server.uid].setText(f"{self._active_server.name}\nstopped")
-        self.buttons["start"].setText("Start")
-
-        server_storage.save(self._active_server)
 
     def _update_players_thread(self):
         while True:
