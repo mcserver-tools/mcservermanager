@@ -33,22 +33,21 @@ class DiscordBot(commands.Bot):
 
         mcserver = None
         for item in server_storage.get_all():
-            try:
-                assert int(item.dc_id) == message.channel.id
+            if item.dc_id == message.channel.id:
                 mcserver = item
-                break
-            except Exception:
-                pass
 
-        if mcserver is not None:
-            if mcserver.wrapper is not None and mcserver.dc_active == 1:
-                if message.content[0] != "/":
+        if mcserver is not None and mcserver.dc_active == 1:
+            if mcserver.wrapper is None:
+                if message.content.strip("/") == "start":
+                    instances.Manager.start_server(mcserver.uid)
+            else:
+                if message.content.strip("/") == "stop":
+                    instances.Manager.stop_server(mcserver.uid)
+                elif message.content[0] != "/":
                     mcserver.wrapper.send_command("/" + message.content)
                 else:
                     mcserver.wrapper.send_command(message.content)
-                return
-
-        return await super().on_message(message)
+            return
 
     def start_bot(self):
         token = open("token.txt", "r").readlines()[0]
