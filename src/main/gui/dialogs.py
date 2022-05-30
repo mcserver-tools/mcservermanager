@@ -1,7 +1,5 @@
-import os
-import re
 import shutil
-import subprocess
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
                              QLineEdit, QPushButton, QVBoxLayout, QComboBox)
 
@@ -43,6 +41,27 @@ class ConfirmDialog(QDialog):
         self.func()
         self.deleteLater()
 
+class InfoDialog(QDialog):
+    def __init__(self, msg) -> None:
+        super().__init__()
+
+        self.setWindowTitle("Info")
+
+        mainBox = QVBoxLayout()
+        msg_label = QLabel(msg)
+        mainBox.addWidget(msg_label)
+        self._add_labels(mainBox)
+        self.setLayout(mainBox)
+        self.exec()
+
+    def _add_labels(self, mainBox):
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedWidth(60)
+        ok_button.setCheckable(False)
+        ok_button.clicked.connect(self.deleteLater)
+
+        mainBox.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
 class WarnDialog(QDialog):
     def __init__(self, msg) -> None:
         super().__init__()
@@ -62,7 +81,7 @@ class WarnDialog(QDialog):
         ok_button.setCheckable(False)
         ok_button.clicked.connect(self.deleteLater)
 
-        mainBox.addWidget(ok_button)
+        mainBox.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
 class ServerAddDialog(QDialog):
     def __init__(self) -> None:
@@ -169,12 +188,12 @@ class ServerRemoveDialog(QDialog):
         remove_button = QPushButton("Remove")
         remove_button.setFixedWidth(80)
         remove_button.setCheckable(False)
-        remove_button.clicked.connect(self._remove_button)
+        remove_button.clicked.connect(lambda *x: ConfirmDialog("This will remove the minecraft server, but keep it on your drive. Continue?", self._remove_button))
 
         rem_del_button = QPushButton("Delete")
         rem_del_button.setFixedWidth(80)
         rem_del_button.setCheckable(False)
-        rem_del_button.clicked.connect(lambda *x: ConfirmDialog("This action will DELETE the minecraft server from your drive.\nThis action is IRREVERSIBLE. Continue?", self._rem_del_button))
+        rem_del_button.clicked.connect(lambda *x: ConfirmDialog("This will DELETE the minecraft server from your drive.\nThis is IRREVERSIBLE. Continue?", self._rem_del_button))
 
         cancel_button = QPushButton("Cancel")
         cancel_button.setFixedWidth(80)
@@ -220,18 +239,25 @@ class JavaOptionsDialog(QDialog):
         java_HBox.addWidget(java_label)
         java_HBox.addWidget(self._java_combobox)
 
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedWidth(60)
+        ok_button.setCheckable(False)
+        ok_button.clicked.connect(self.deleteLater)
+
         search_button = QPushButton("Search")
         search_button.setFixedWidth(80)
         search_button.setCheckable(False)
         search_button.clicked.connect(self._search_button)
 
+        buttonsHBox = QHBoxLayout()
+        buttonsHBox.addWidget(ok_button)
+        buttonsHBox.addWidget(search_button)
+
         mainVBox.addLayout(java_HBox)
-        mainVBox.addWidget(search_button)
+        mainVBox.addLayout(buttonsHBox)
         self.setLayout(mainVBox)
 
     def _search_button(self):
-        print(instances.GUI._active_server.javapath)
-
         instances.Manager.save_javaversions()
 
         self._java_combobox.clear()
@@ -242,8 +268,5 @@ class JavaOptionsDialog(QDialog):
         for item in instances.DBManager.get_javaversions():
             instances.GUI.combo_boxes["java"].addItem(item[0])
         java_name = instances.DBManager.get_javaname(instances.GUI._active_server.javapath)
-        print(instances.GUI._active_server.javapath)
-        print(java_name)
         index = instances.GUI.combo_boxes["java"].findText(java_name)
-        print(index)
         instances.GUI.combo_boxes["java"].setCurrentIndex(index)

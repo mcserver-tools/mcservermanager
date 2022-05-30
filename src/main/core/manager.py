@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QApplication
 
 import core.instances as instances
 import core.server_storage as server_storage
-from gui.dialogs import WarnDialog
+from gui.dialogs import InfoDialog, WarnDialog
 
 class Manager():
     def __init__(self) -> None:
@@ -33,7 +33,7 @@ class Manager():
             os.mkdir("./servers")
 
         if instances.DBManager.get_javaversions() == []:
-            self.save_javaversions()
+            self.save_javaversions(False)
 
         server_storage.setup()
 
@@ -91,13 +91,15 @@ class Manager():
         del instances.GUI.buttons[uid]
         instances.GUI._active_server = None
         new_uid = server_storage.uids()[0]
-        instances.GUI.load_profile(server_storage.get(new_uid))
+        instances.GUI.load_profile(new_uid)
         instances.GUI.buttons[new_uid].setChecked(True)
  
-    def save_javaversions(self):
+    def save_javaversions(self, info_dialog = True):
         found_javaversions = self._get_javaversions()
         saved_javaversions = instances.DBManager.get_javaversions()
         new_versions = [item for item in found_javaversions if item not in saved_javaversions]
+        if info_dialog:
+            InfoDialog(f"{len(new_versions)} new java installs have been found")
         for item in new_versions:
             instances.DBManager.add_javaversion(item[0], item[1])
 
@@ -121,7 +123,9 @@ class Manager():
         for item in version_foldernames:
             java_exe_path = f"{java_dir}\\{item}\\bin\\java.exe"
             if os.path.exists(java_exe_path):
-                java_versions.append((f"Java {self._get_version_name(java_exe_path)}", java_exe_path))
+                java_version = (f"Java {self._get_version_name(java_exe_path)}", java_exe_path)
+                if java_version[0] not in [item[0] for item in java_versions]:
+                    java_versions.append(java_version)
 
         return java_versions
 

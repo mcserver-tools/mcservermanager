@@ -1,19 +1,30 @@
 from dataclasses import dataclass
 
+class defaults():
+    PORT = 25565
+    MAX_PLAYERS = 20
+    RAM = "4G"
+    JAR = "server.jar"
+    WHITELIST = ""
+    JAVAPATH = "java"
+    DC_ACTIVE = False
+    DC_ID = 0
+    DC_FULL = False
+
 @dataclass
 class McServer():
     uid: int
     name: str = ""
     path: str = ""
-    port: int = 25565
-    max_players: int = 20
-    ram: str = "4G"
-    jar: str = "server.jar"
-    whitelist: str = ""
-    javapath: str = "java"
-    dc_active: bool = False
-    dc_id: int = 0
-    dc_full: bool = False
+    port: int = defaults.PORT
+    max_players: int = defaults.MAX_PLAYERS
+    ram: str = defaults.RAM
+    jar: str = defaults.JAR
+    whitelist: str = defaults.WHITELIST
+    javapath: str = defaults.JAVAPATH
+    dc_active: bool = defaults.DC_ACTIVE
+    dc_id: int = defaults.DC_ID
+    dc_full: bool = defaults.DC_FULL
     wrapper = None
 
     def __post_init__(self):
@@ -36,7 +47,3 @@ class McServer():
 
     def __str__(self) -> str:
         return f'name "{self.name}", path "{self.path}", uid "{self.uid}", {self.get_start_command().replace(" -", ", ")[1::]}'
-
-if __name__ == "__main__":
-    srv = McServer(35235235, "Test", "some/path/", 25566, 4, "3G", "paper-1.xx.jar", "Emanuel1,Pfefan", "java", False, 0, False)
-    print(srv.get_start_command())

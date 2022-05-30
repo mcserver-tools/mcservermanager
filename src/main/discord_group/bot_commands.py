@@ -130,7 +130,7 @@ class BotCommands(commands.Cog):
         instances.GUI._active_server.dc_id = srv.dc_id
         instances.GUI._active_server.dc_active = srv.dc_active
         instances.GUI._active_server.dc_full = srv.dc_full
-        instances.GUI.load_profile(instances.GUI._active_server)
+        instances.GUI.load_profile(instances.GUI._active_server.uid)
 
 def setup(client):
     client.add_cog(BotCommands(client))

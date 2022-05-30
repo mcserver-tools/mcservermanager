@@ -9,7 +9,7 @@ import core.server_storage as server_storage
 import discord_group.discord_bot
 import helpers.info_getter as info_getter
 import core.instances as instances
-from dataclass.mcserver import McServer
+from dataclass.mcserver import McServer, defaults
 
 class GUI(QMainWindow):
     def __init__(self):
@@ -67,32 +67,17 @@ class GUI(QMainWindow):
         self.labels["uid"].setText(str(server.uid))
         self.labels["path"].setText(server.path)
 
-        try:
-            self.line_edits["port"].setText(str(server.port) if server.port != 25565 else "")
-        except (KeyError, FileNotFoundError):
-            self.line_edits["port"].setText("")
+        self.line_edits["port"].setText(str(server.port) if server.port != defaults.PORT else "")
 
-        try:
-            self.line_edits["maxplayers"].setText(str(server.max_players) if server.max_players != 20 else "")
-        except (KeyError, FileNotFoundError):
-            self.line_edits["maxplayers"].setText("")
+        self.line_edits["maxplayers"].setText(str(server.max_players) if server.max_players != defaults.MAX_PLAYERS else "")
 
     def _load_whitelist(self, server: McServer):
-        try:
-            self.line_edits["whitelist"].setText(server.whitelist)
-        except (KeyError, FileNotFoundError):
-            self.line_edits["whitelist"].setText("")
+        self.line_edits["whitelist"].setText(server.whitelist)
 
     def _load_startup(self, server: McServer):
-        try:
-            self.line_edits["ram"].setText(server.ram if server.ram != "4G" else "")
-        except (KeyError, FileNotFoundError):
-            self.line_edits["ram"].setText("")
+        self.line_edits["ram"].setText(server.ram if server.ram != defaults.RAM else "")
 
-        try:
-            self.line_edits["jar"].setText(server.jar if server.jar != "server.jar" else "")
-        except (KeyError, FileNotFoundError):
-            self.line_edits["jar"].setText("")
+        self.line_edits["jar"].setText(server.jar if server.jar != defaults.JAR else "")
 
         try:
             javaname = instances.DBManager.get_javaname(server.javapath)
@@ -105,20 +90,11 @@ class GUI(QMainWindow):
             self.combo_boxes["java"].setCurrentIndex(0)
 
     def _load_discord(self, server: McServer):
-        try:
-            self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != 0 else "")
-        except (KeyError, FileNotFoundError):
-            self.line_edits["dc_id"].setText("")
+        self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != defaults.DC_ID else "")
 
-        try:
-            self.check_boxes["dc_full"].setChecked(bool(server.dc_full))
-        except (KeyError, FileNotFoundError):
-            self.check_boxes["dc_full"].setChecked(False)
+        self.check_boxes["dc_full"].setChecked(bool(server.dc_full))
 
-        try:
-            self.check_boxes["dc_active"].setChecked(bool(server.dc_active))
-        except (KeyError, FileNotFoundError):
-            self.check_boxes["dc_active"].setChecked(False)
+        self.check_boxes["dc_active"].setChecked(bool(server.dc_active))
 
     def _name_changed(self, text):
         self._active_server.name = text
@@ -126,19 +102,25 @@ class GUI(QMainWindow):
         self.buttons[self._active_server.uid].setText(text + "\n" + self.buttons[self._active_server.uid].text().split("\n")[1])
 
     def _port_changed(self, text):
-        self._active_server.port = text
+        try:
+            self._active_server.port = int(text)
+        except ValueError:
+            self._active_server.port = defaults.PORT
 
     def _max_players_changed(self, text):
-        self._active_server.max_players = text
+        try:
+            self._active_server.max_players = int(text)
+        except ValueError:
+            self._active_server.max_players = defaults.MAX_PLAYERS
 
     def _whitelist_changed(self, text):
-        self._active_server.whitelist = text
+        self._active_server.whitelist = text if text != "" else defaults.WHITELIST
 
     def _ram_changed(self, text):
-        self._active_server.ram = text
+        self._active_server.ram = text if text != "" else defaults.RAM
 
     def _jar_changed(self, text):
-        self._active_server.jar = text
+        self._active_server.jar = text if text != "" else defaults.JAR
 
     def _java_changed(self, text):
         if text != "":
@@ -157,7 +139,10 @@ class GUI(QMainWindow):
         self._active_server.dc_full = int(self.check_boxes["dc_full"].isChecked())
 
     def _dcbot_id_changed(self, text):
-        self._active_server.dc_id = text
+        try:
+            self._active_server.dc_id = int(text)
+        except ValueError:
+            self._active_server.dc_id = defaults.DC_ID
 
     def _serverbutton_clicked(self):
         uid = int(self.sender().objectName())
