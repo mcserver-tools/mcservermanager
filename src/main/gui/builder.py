@@ -60,11 +60,12 @@ def _add_header(gui, mainbox):
     gui.buttons["add"].clicked.connect(lambda *x: dialogs.ServerAddDialog())
     gui.buttons["add"].setCheckable(False)
 
-    gui.buttons["java"] = QPushButton(icon=QIcon("/icons/java.png"))
+    gui.buttons["java"] = QPushButton()
     gui.buttons["java"].setObjectName("java")
     gui.buttons["java"].setFixedSize(30, 30)
     gui.buttons["java"].clicked.connect(lambda *x: dialogs.JavaOptionsDialog())
     gui.buttons["java"].setCheckable(False)
+    gui.buttons["java"].setStyleSheet("background-image: url('icons/java.png');")
 
     headerHBox.addWidget(gui.buttons["add"])
     headerHBox.addWidget(gui.buttons["java"])
