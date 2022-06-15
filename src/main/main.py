@@ -7,5 +7,5 @@ if __name__ == "__main__":
 
     import core.instances as instances
 
-    instances.Manager.setup()
-    instances.Manager.run()
+    instances.MANAGER.setup()
+    instances.MANAGER.run()

@@ -32,18 +32,13 @@ class McServer():
             raise TypeError(f"uid has to be int, but is {type(self.uid)}")
 
     def get_start_command(self) -> str:
-        params = [("jar", self.jar), ("ram", self.ram), ("port", self.port), ("maxp", self.max_players), ("whitelist", self._whitelist_str())]
-        cmd = f'-java "{self.javapath}"'
+        cmd = f"{self.javapath} -Xmx{self.ram} -jar {self.jar} nogui"
+        args = {"port": self.port, "maxp": self.max_players, "whitelist": self.whitelist}
 
-        for param in params:
-            try:
-                cmd += f" -{param[0]} {param[1]}" if param[1] != "" else ""
-            except KeyError:
-                pass
-        return cmd.strip(" ")
+        return cmd, args
 
     def _whitelist_str(self):
         return str(self.whitelist)
 
     def __str__(self) -> str:
-        return f'name "{self.name}", path "{self.path}", uid "{self.uid}", {self.get_start_command().replace(" -", ", ")[1::]}'
+        return str(self.get_start_command())

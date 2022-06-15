@@ -203,7 +203,7 @@ def _add_startup_area(gui, mainVBox):
     javaHBox = QHBoxLayout()
     gui.labels["java"] = QLabel("Java executable:")
     gui.combo_boxes["java"] = QComboBox()
-    for item in instances.DBManager.get_javaversions():
+    for item in instances.DB_MANAGER.get_javaversions():
         gui.combo_boxes["java"].addItem(item[0])
     gui.combo_boxes["java"].currentTextChanged.connect(gui._java_changed)
     javaHBox.addWidget(gui.labels["java"])

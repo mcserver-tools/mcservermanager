@@ -9,7 +9,7 @@ import core.instances as instances
 
 class DiscordBot(commands.Bot):
     def __init__(self):
-        if instances.DiscordBot is not None:
+        if instances.DISCORD_BOT is not None:
             raise Exception("There is already a discordbot instance")
 
         super().__init__(command_prefix = 'mc.', help_command = None, intents = discord.Intents.all())
@@ -21,7 +21,7 @@ class DiscordBot(commands.Bot):
             cog.setup(self)
 
     async def on_ready(self):
-        instances.DiscordBot = self
+        instances.DISCORD_BOT = self
         print(f"{self.user} is now online")
 
     async def on_reaction_add(self, reaction, user):
@@ -41,10 +41,10 @@ class DiscordBot(commands.Bot):
         if mcserver is not None and mcserver.dc_active == 1:
             if mcserver.wrapper is None:
                 if message.content.strip("/") == "start":
-                    instances.Manager.start_server(mcserver.uid)
+                    instances.MANAGER.start_server(mcserver.uid)
             else:
                 if message.content.strip("/") == "stop":
-                    instances.Manager.stop_server(mcserver.uid)
+                    instances.MANAGER.stop_server(mcserver.uid)
                 elif message.content[0] != "/":
                     mcserver.wrapper.send_command("/" + message.content)
                 else:

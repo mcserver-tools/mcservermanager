@@ -16,7 +16,7 @@ class DBManager():
     """Class that manages the database"""
 
     def __init__(self):
-        if instances.DBManager is not None:
+        if instances.DB_MANAGER is not None:
             raise Exception("There can only be one instance at a time")
 
         db_connection = sqlalchemy.create_engine("sqlite:///database.db",
@@ -29,7 +29,7 @@ class DBManager():
 
         self.lock = Lock()
 
-        instances.DBManager = self
+        instances.DB_MANAGER = self
 
     def add_mcserver(self, mcserver_obj: McServerObj) -> None:
         """Add a McServer object to the database"""

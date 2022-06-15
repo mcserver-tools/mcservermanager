@@ -40,6 +40,10 @@ class GUI(QMainWindow):
         self._active_server = server_storage.get(uid)
         self._load_config()
 
+    def load_profile_lazy(self, uid):
+        self._active_server = server_storage.get(uid)
+        self._load_config()
+
     def add_server(self, uid):
         server = server_storage.get(uid)
         self.buttons[server.uid] = QPushButton(server.name + "\nstopped")
@@ -80,7 +84,7 @@ class GUI(QMainWindow):
         self.line_edits["jar"].setText(server.jar if server.jar != defaults.JAR else "")
 
         try:
-            javaname = instances.DBManager.get_javaname(server.javapath)
+            javaname = instances.DB_MANAGER.get_javaname(server.javapath)
             index = self.combo_boxes["java"].findText(javaname)
             if index >= 0:
                 self.combo_boxes["java"].setCurrentIndex(index)
@@ -98,7 +102,7 @@ class GUI(QMainWindow):
 
     def _name_changed(self, text):
         self._active_server.name = text
-        instances.DBManager.add_mcserver(self._active_server)
+        instances.DB_MANAGER.add_mcserver(self._active_server)
         self.buttons[self._active_server.uid].setText(text + "\n" + self.buttons[self._active_server.uid].text().split("\n")[1])
 
     def _port_changed(self, text):
@@ -124,13 +128,13 @@ class GUI(QMainWindow):
 
     def _java_changed(self, text):
         if text != "":
-            self._active_server.javapath = instances.DBManager.get_javaversion(text)
+            self._active_server.javapath = instances.DB_MANAGER.get_javaversion(text)
 
     def _dcbot_toggled(self):
-        if instances.DiscordBot is None:
+        if instances.DISCORD_BOT is None:
             Thread(target=discord_group.discord_bot.DiscordBot().start_bot, daemon=True).start()
         else:
-            instances.DiscordBot.stop()
+            instances.DISCORD_BOT.stop()
 
     def _dcbot_server_toggled(self):
         self._active_server.dc_active = int(self.check_boxes["dc_active"].isChecked())
@@ -153,15 +157,16 @@ class GUI(QMainWindow):
 
     def _pathbutton_clicked(self):
         new_path = QFileDialog.getExistingDirectory(caption="Select the server folder")
-        self._active_server.path = new_path
-        self.labels["path"].setText(new_path)
-        server_storage.save(self._active_server)
+        if new_path != "":
+            self._active_server.path = new_path
+            self.labels["path"].setText(new_path)
+            server_storage.save(self._active_server)
 
     def _start_button_clicked(self):
         if self.buttons["start"].text() == "Start":
-            Thread(target=instances.Manager.start_server, args=(self._active_server.uid,)).start()
+            Thread(target=instances.MANAGER.start_server, args=(self._active_server.uid,)).start()
         elif self.buttons["start"].text() == "Stop":
-            Thread(target=instances.Manager.stop_server, args=(self._active_server.uid,)).start()
+            Thread(target=instances.MANAGER.stop_server, args=(self._active_server.uid,)).start()
         else:
             raise Exception(f"start_button is in false state {self.buttons['start'].text()}")
 

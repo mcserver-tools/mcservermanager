@@ -1,4 +1,6 @@
+"""Constants to hold singleton classes"""
+
 GUI = None
-Manager = None
-DiscordBot = None
-DBManager = None
+MANAGER = None
+DISCORD_BOT = None
+DB_MANAGER = None

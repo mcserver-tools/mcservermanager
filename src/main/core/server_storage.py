@@ -11,7 +11,7 @@ def add(server: McServer) -> None:
         raise KeyError(f"Server {server.name} with uid {server.uid} already exists at {server.path}")
 
     _storage[server.uid] = server.wrapper
-    instances.DBManager.add_mcserver(server)
+    instances.DB_MANAGER.add_mcserver(server)
 
 def get(uid: int) -> McServer:
     if not isinstance(uid, int):
@@ -20,7 +20,7 @@ def get(uid: int) -> McServer:
     if not uid in _storage.keys():
         raise KeyError(f"Server with uid {uid} does not exist")
 
-    srv = instances.DBManager.get_mcserver(uid)
+    srv = instances.DB_MANAGER.get_mcserver(uid)
     srv.wrapper = _storage[uid]
     return srv
 
@@ -28,27 +28,27 @@ def get_by_name(name: str) -> McServer:
     if not isinstance(name, str):
         raise TypeError(f"Expected str, got {type(name)}")
 
-    srv = instances.DBManager.get_mcserver_by_name(name)
+    srv = instances.DB_MANAGER.get_mcserver_by_name(name)
     srv.wrapper = _storage[srv.uid]
     return srv
 
 def get_all() -> list[McServer]:
     servers = []
-    for item in instances.DBManager.get_mcservers():
+    for item in instances.DB_MANAGER.get_mcservers():
         servers.append(item)
         servers[-1].wrapper = _storage[servers[-1].uid]
     return servers
 
 def save(mcserver: McServer) -> None:
     _storage[mcserver.uid] = mcserver.wrapper
-    instances.DBManager.save_mcserver(mcserver)
+    instances.DB_MANAGER.save_mcserver(mcserver)
 
 def setup():
-    for item in instances.DBManager.get_mcservers():
+    for item in instances.DB_MANAGER.get_mcservers():
         _storage[item.uid] = None
 
 def remove(uid: int) -> None:
-    instances.DBManager.remove_mcserver(uid)
+    instances.DB_MANAGER.remove_mcserver(uid)
     del _storage[uid]
 
 def uids() -> list[int]:

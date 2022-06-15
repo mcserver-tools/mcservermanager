@@ -170,7 +170,7 @@ class ServerChooseDialog(QDialog):
         self._path = QFileDialog.getExistingDirectory(caption="Select the server folder")
 
     def _add_server(self):
-        instances.Manager.add_server(self._name.text(), self._path)
+        instances.MANAGER.add_server(self._name.text(), self._path)
         self.deleteLater()
 
 class ServerRemoveDialog(QDialog):
@@ -206,12 +206,12 @@ class ServerRemoveDialog(QDialog):
         self.setLayout(buttonsHBox)
 
     def _remove_button(self):
-        instances.Manager.remove_server(instances.GUI._active_server.uid)
+        instances.MANAGER.remove_server(instances.GUI._active_server.uid)
         self.deleteLater()
 
     def _rem_del_button(self):
         path = instances.GUI._active_server.path
-        instances.Manager.remove_server(instances.GUI._active_server.uid)
+        instances.MANAGER.remove_server(instances.GUI._active_server.uid)
         shutil.rmtree(path, ignore_errors=True)
         self.deleteLater()
 
@@ -233,7 +233,7 @@ class JavaOptionsDialog(QDialog):
         java_label = QLabel("Java Versions:")
         self._java_combobox = QComboBox()
 
-        for item in instances.DBManager.get_javaversions():
+        for item in instances.DB_MANAGER.get_javaversions():
             self._java_combobox.addItem(item[0])
 
         java_HBox.addWidget(java_label)
@@ -258,15 +258,15 @@ class JavaOptionsDialog(QDialog):
         self.setLayout(mainVBox)
 
     def _search_button(self):
-        instances.Manager.save_javaversions()
+        instances.MANAGER.save_javaversions()
 
         self._java_combobox.clear()
-        for item in instances.DBManager.get_javaversions():
+        for item in instances.DB_MANAGER.get_javaversions():
             self._java_combobox.addItem(item[0])
 
         instances.GUI.combo_boxes["java"].clear()
-        for item in instances.DBManager.get_javaversions():
+        for item in instances.DB_MANAGER.get_javaversions():
             instances.GUI.combo_boxes["java"].addItem(item[0])
-        java_name = instances.DBManager.get_javaname(instances.GUI._active_server.javapath)
+        java_name = instances.DB_MANAGER.get_javaname(instances.GUI._active_server.javapath)
         index = instances.GUI.combo_boxes["java"].findText(java_name)
         instances.GUI.combo_boxes["java"].setCurrentIndex(index)
