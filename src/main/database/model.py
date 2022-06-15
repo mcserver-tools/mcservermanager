@@ -21,6 +21,7 @@ class McServer(Base):
     ram = sqlalchemy.Column(sqlalchemy.String)
     jar = sqlalchemy.Column(sqlalchemy.String)
     whitelist = sqlalchemy.Column(sqlalchemy.String)
+    batchfile = sqlalchemy.Column(sqlalchemy.String)
     javaversion_id = sqlalchemy.Column(sqlalchemy.Integer,
                                        sqlalchemy.ForeignKey("javaversion.javaversion_id"))
     discord = relationship("Discord", cascade="all,delete", uselist=False, backref="mcserver")

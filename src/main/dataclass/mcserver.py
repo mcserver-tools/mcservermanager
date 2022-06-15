@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 class defaults():
     PORT = 25565
@@ -21,6 +22,7 @@ class McServer():
     ram: str = defaults.RAM
     jar: str = defaults.JAR
     whitelist: str = defaults.WHITELIST
+    batchfile: str = ""
     javapath: str = defaults.JAVAPATH
     dc_active: bool = defaults.DC_ACTIVE
     dc_id: int = defaults.DC_ID
@@ -31,7 +33,7 @@ class McServer():
         if not isinstance(self.uid, int):
             raise TypeError(f"uid has to be int, but is {type(self.uid)}")
 
-    def get_start_command(self) -> str:
+    def get_start_command(self) -> Tuple[str, dict]:
         cmd = f"{self.javapath} -Xmx{self.ram} -jar {self.jar} nogui"
         args = {"port": self.port, "maxp": self.max_players, "whitelist": self.whitelist}
 

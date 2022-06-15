@@ -1,5 +1,7 @@
 import asyncio
-import cmd
+from queue import Queue
+from threading import Thread
+from time import sleep
 import discord
 from discord.ext import commands
 import discord_group.bot_commands as bot_commands
@@ -14,11 +16,14 @@ class DiscordBot(commands.Bot):
 
         super().__init__(command_prefix = 'mc.', help_command = None, intents = discord.Intents.all())
 
+        self.message_queues: dict[int, Queue] = {}
         self._messages = {}
 
         self._cogs = [bot_commands]
         for cog in self._cogs:
             cog.setup(self)
+
+        Thread(target=self._update_func, daemon=True).start()
 
     async def on_ready(self):
         instances.DISCORD_BOT = self
@@ -66,5 +71,32 @@ class DiscordBot(commands.Bot):
             edit_fut = asyncio.run_coroutine_threadsafe(self._messages[channel_id].edit(content=new_text), self.loop)
             edit_fut.result()
         else:
-            send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text), self.loop)
-            self._messages[channel_id] = send_fut.result()
+            while len(text) > 0:
+                send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text[0:1999:1]), self.loop)
+                self._messages[channel_id] = send_fut.result()
+                text = text[2000::1]
+
+    def _update_func(self):
+        while True:
+            sleep(1)
+            while len(self.message_queues) == 0:
+                sleep(1)
+            
+            for key in self.message_queues:
+                if not self.message_queues[key].empty():
+                    self._handle_server(key, self.message_queues[key])
+
+    def _handle_server(self, channel_id: int, queue: Queue):
+        msg_text = queue.get()
+        while not queue.empty():
+            while len(msg_text) >= 2000:
+                self.send(channel_id, msg_text[0:1999:1])
+                msg_text = msg_text[2000::1]
+            new_msg_text = queue.get()
+            if len(msg_text + new_msg_text) + 2 > 2000:
+                self.send(channel_id, msg_text)
+                msg_text = new_msg_text
+            else:
+                msg_text += f"\n{new_msg_text}"
+        if len(msg_text) > 0:
+            self.send(channel_id, msg_text)

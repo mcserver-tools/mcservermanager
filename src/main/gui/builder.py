@@ -3,7 +3,6 @@ from threading import Thread
 
 import core.server_storage as server_storage
 from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QVBoxLayout,
                              QWidget, QComboBox)
@@ -184,6 +183,23 @@ def _add_startup_area(gui, mainVBox):
     startupVBox = QVBoxLayout()
     startup_groupbox.setLayout(startupVBox)
 
+    gui.combo_boxes["startup"] = QComboBox()
+    gui.combo_boxes["startup"].addItem("jar file")
+    gui.combo_boxes["startup"].addItem("bat file")
+    gui.combo_boxes["startup"].currentTextChanged.connect(gui._startup_changed)
+
+    gui.startup_VBox = QVBoxLayout()
+
+    batHBox = QHBoxLayout()
+    gui.labels["bat"] = QLabel("bat file:")
+    gui.line_edits["bat"] = QLineEdit()
+    gui.line_edits["bat"].setPlaceholderText("")
+    gui.line_edits["bat"].textChanged.connect(gui._bat_changed)
+    batHBox.addWidget(gui.labels["bat"])
+    batHBox.addWidget(gui.line_edits["bat"])
+    batWidget = QWidget()
+    batWidget.setLayout(batHBox)
+
     ramHBox = QHBoxLayout()
     gui.labels["ram"] = QLabel("RAM:")
     gui.line_edits["ram"] = QLineEdit()
@@ -206,14 +222,24 @@ def _add_startup_area(gui, mainVBox):
     for item in instances.DB_MANAGER.get_javaversions():
         gui.combo_boxes["java"].addItem(item[0])
     gui.combo_boxes["java"].currentTextChanged.connect(gui._java_changed)
+    javaWidget = QWidget()
+    javaWidget.setLayout(jarHBox)
+
     javaHBox.addWidget(gui.labels["java"])
     javaHBox.addWidget(gui.combo_boxes["java"])
 
     ram_jar_HBox = QHBoxLayout()
     ram_jar_HBox.addLayout(ramHBox)
     ram_jar_HBox.addLayout(jarHBox)
-    startupVBox.addLayout(ram_jar_HBox)
-    startupVBox.addLayout(javaHBox)
+    ram_jar_Widget = QWidget()
+    ram_jar_Widget.setLayout(ram_jar_HBox)
+
+    gui.startup_VBox.addWidget(javaWidget)
+    gui.startup_VBox.addWidget(ram_jar_Widget)
+    gui.startup_VBox.addWidget(batWidget)
+
+    startupVBox.addWidget(gui.combo_boxes["startup"])
+    startupVBox.addLayout(gui.startup_VBox)
 
 def _add_discord_area(gui, mainVBox):
     discord_groupbox = QGroupBox("Discord")

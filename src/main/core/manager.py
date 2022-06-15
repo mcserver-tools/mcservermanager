@@ -4,6 +4,7 @@
 
 import importlib
 import os
+from queue import Queue
 import re
 import subprocess
 import sys
@@ -53,7 +54,7 @@ class Manager():
         guibuilder.build().show()
 
         Thread(target=discord_group.discord_bot.DiscordBot().start_bot, daemon=True).start()
-        Thread(target=self._send_discord_logs, daemon=True).start()
+        Thread(target=self._check_logs, daemon=True).start()
 
         app.exec()
 
@@ -68,16 +69,19 @@ class Manager():
         """Starts the server with the given uid"""
 
         server = server_storage.get(uid)
-        cmd = server.get_start_command()
+        cmd, args = server.get_start_command()
+
+        if instances.GUI.combo_boxes["startup"].currentText() == "bat file":
+            cmd = server.batchfile
 
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstarting...")
 
         print(f"Starting {server.name} with the following command:")
-        print(cmd[0])
+        print(cmd)
 
         main_cwd = os.getcwd()
         os.chdir(server.path)
-        server.wrapper = instances.MANAGER.wrapper_module.Wrapper(output=False, command=cmd[0], args=cmd[1])
+        server.wrapper = instances.MANAGER.wrapper_module.Wrapper(output=False, command=cmd, args=args)
         server_storage.save(server)
         instances.GUI.load_profile_lazy(server.uid)
         server.wrapper.startup()
@@ -92,11 +96,12 @@ class Manager():
 
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopping...")
         server.wrapper.stop()
+
+        sleep(5)
+
         server.wrapper = None
         server_storage.save(server)
         instances.GUI.load_profile_lazy(server.uid)
-
-        sleep(5)
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopped")
 
     def remove_server(self, uid):
@@ -120,6 +125,9 @@ class Manager():
             InfoDialog(f"{len(new_versions)} new java installs have been found")
         for item in new_versions:
             instances.DB_MANAGER.add_javaversion(item[0], item[1])
+
+    def error_occured(self, message):
+        pass
 
     def _get_javaversions(self):
         java_versions = []
@@ -162,13 +170,16 @@ class Manager():
 
         return re.search(r"[0-9]+\.[0-9]+\.[0-9]+_*[0-9]*\s*", version_output_full).group()
 
-    def _send_discord_logs(self):
+    def _check_logs(self):
         while True:
-            if instances.DISCORD_BOT is not None:
-                for item in server_storage.get_all():
-                    if item.wrapper is not None and item.dc_active and item.dc_full \
+            for item in server_storage.get_all():
+                while item.wrapper is not None and not item.wrapper.output_queue.empty():
+                    text = item.wrapper.output_queue.get()
+                    if instances.DISCORD_BOT is not None and item.dc_active and item.dc_full \
                        and item.dc_id not in [0, None]:
-                        while item.wrapper is not None and not item.wrapper.output_queue.empty():
-                            instances.DISCORD_BOT.send(int(item.dc_id),
-                                                       item.wrapper.output_queue.get())
+                        if int(item.dc_id) not in instances.DISCORD_BOT.message_queues:
+                            instances.DISCORD_BOT.message_queues[int(item.dc_id)] = Queue()
+                        instances.DISCORD_BOT.message_queues[int(item.dc_id)].put(text)
+                    if text.startswith("Error:"):
+                        self.error_occured(text)
             sleep(1)

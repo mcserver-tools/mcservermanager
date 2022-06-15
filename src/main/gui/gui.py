@@ -25,6 +25,7 @@ class GUI(QMainWindow):
         self.check_boxes = {}
         self.combo_boxes = {}
         self.server_list_VBox = None
+        self.startup_VBox = None
         self._active_server: McServer = None
 
         instances.GUI = self
@@ -93,6 +94,8 @@ class GUI(QMainWindow):
         except (KeyError, FileNotFoundError):
             self.combo_boxes["java"].setCurrentIndex(0)
 
+        self.line_edits["bat"].setText(server.batchfile)
+
     def _load_discord(self, server: McServer):
         self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != defaults.DC_ID else "")
 
@@ -126,9 +129,25 @@ class GUI(QMainWindow):
     def _jar_changed(self, text):
         self._active_server.jar = text if text != "" else defaults.JAR
 
+    def _bat_changed(self, text):
+        self._active_server.batchfile = text
+
     def _java_changed(self, text):
         if text != "":
             self._active_server.javapath = instances.DB_MANAGER.get_javaversion(text)
+
+    def _startup_changed(self, text):
+        if text == "":
+            return
+
+        for item in [self.startup_VBox.itemAt(c) for c in range(self.startup_VBox.count())]:
+            item.widget().hide()
+
+        if text == "jar file":
+            self.startup_VBox.itemAt(0).widget().show()
+            self.startup_VBox.itemAt(1).widget().show()
+        elif text == "bat file":
+            self.startup_VBox.itemAt(2).widget().show()
 
     def _dcbot_toggled(self):
         if instances.DISCORD_BOT is None:
