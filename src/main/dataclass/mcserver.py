@@ -1,7 +1,13 @@
+"""Module containing the McServer dataclass and the default constants"""
+
 from dataclasses import dataclass
 from typing import Tuple
 
-class defaults():
+# pylint: disable=R0902, R0903
+
+class Defaults():
+    """Class containing default values for minecraft servers"""
+
     PORT = 25565
     MAX_PLAYERS = 20
     RAM = "4G"
@@ -14,19 +20,21 @@ class defaults():
 
 @dataclass
 class McServer():
+    """Dataclass representing a minecraft server"""
+
     uid: int
     name: str = ""
     path: str = ""
-    port: int = defaults.PORT
-    max_players: int = defaults.MAX_PLAYERS
-    ram: str = defaults.RAM
-    jar: str = defaults.JAR
-    whitelist: str = defaults.WHITELIST
+    port: int = Defaults.PORT
+    max_players: int = Defaults.MAX_PLAYERS
+    ram: str = Defaults.RAM
+    jar: str = Defaults.JAR
+    whitelist: str = Defaults.WHITELIST
     batchfile: str = ""
-    javapath: str = defaults.JAVAPATH
-    dc_active: bool = defaults.DC_ACTIVE
-    dc_id: int = defaults.DC_ID
-    dc_full: bool = defaults.DC_FULL
+    javapath: str = Defaults.JAVAPATH
+    dc_active: bool = Defaults.DC_ACTIVE
+    dc_id: int = Defaults.DC_ID
+    dc_full: bool = Defaults.DC_FULL
     wrapper = None
 
     def __post_init__(self):
@@ -34,6 +42,8 @@ class McServer():
             raise TypeError(f"uid has to be int, but is {type(self.uid)}")
 
     def get_start_command(self) -> Tuple[str, dict]:
+        """Return a server start command and the start args"""
+
         cmd = f"{self.javapath} -Xmx{self.ram} -jar {self.jar} nogui"
         args = {"port": self.port, "maxp": self.max_players, "whitelist": self.whitelist}
 

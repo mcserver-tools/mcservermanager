@@ -1,24 +1,24 @@
 """Module containing the manager class"""
 
-# pylint: diasble=E0401, E0611
+# pylint: disable=E0401, E0611, R0402
 
 import importlib
 import os
-from queue import Queue
 import re
 import subprocess
 import sys
+from queue import Queue
 from threading import Thread
 from time import sleep
+
+from PyQt6.QtWidgets import QApplication
 
 import discord_group.discord_bot
 import gui.builder as guibuilder
 from dataclass.mcserver import McServer
-from PyQt6.QtWidgets import QApplication
-
+from gui.dialogs import ErrorDialog, InfoDialog, WarnDialog
 import core.instances as instances
 import core.server_storage as server_storage
-from gui.dialogs import InfoDialog, WarnDialog
 
 class Manager():
     """Singleton class containing the main functions"""
@@ -58,14 +58,16 @@ class Manager():
 
         app.exec()
 
-    def add_server(self, name, path):
+    @staticmethod
+    def add_server(name, path):
         """Adds a server with given name and path"""
 
         uid = instances.DB_MANAGER.get_new_uid()
         server_storage.add(McServer(uid=uid, name=name, path=path))
         instances.GUI.add_server(uid)
 
-    def start_server(self, uid):
+    @staticmethod
+    def start_server(uid):
         """Starts the server with the given uid"""
 
         server = server_storage.get(uid)
@@ -78,18 +80,22 @@ class Manager():
 
         print(f"Starting {server.name} with the following command:")
         print(cmd)
+        print(args)
 
         main_cwd = os.getcwd()
         os.chdir(server.path)
-        server.wrapper = instances.MANAGER.wrapper_module.Wrapper(output=False, command=cmd, args=args)
+        server.wrapper = instances.MANAGER.wrapper_module.Wrapper(command=cmd, args=args,
+                                                                  output=False)
         server_storage.save(server)
         instances.GUI.load_profile_lazy(server.uid)
         server.wrapper.startup()
         os.chdir(main_cwd)
 
-        instances.GUI.buttons[server.uid].setText(f"{server.name}\nonline (0/{server.max_players})")
+        instances.GUI.buttons[server.uid].setText(f"{server.name}\nonline " + \
+                                                  f"(0/{server.max_players})")
 
-    def stop_server(self, uid):
+    @staticmethod
+    def stop_server(uid):
         """Stops the server with the given uid"""
 
         server = server_storage.get(uid)
@@ -104,13 +110,14 @@ class Manager():
         instances.GUI.load_profile_lazy(server.uid)
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopped")
 
-    def remove_server(self, uid):
+    @staticmethod
+    def remove_server(uid):
         """Removes the server with the given uid"""
 
         server_storage.remove(uid)
         instances.GUI.buttons[uid].deleteLater()
         del instances.GUI.buttons[uid]
-        instances.GUI._active_server = None
+        instances.GUI.active_server = None
         new_uid = server_storage.uids()[0]
         instances.GUI.load_profile(new_uid)
         instances.GUI.buttons[new_uid].setChecked(True)
@@ -127,21 +134,27 @@ class Manager():
             instances.DB_MANAGER.add_javaversion(item[0], item[1])
 
     def error_occured(self, message):
-        pass
+        """Function handling occured errors"""
+
+        if instances.GUI.active_server.wrapper is not None:
+            Thread(target=self.stop_server, args=[instances.GUI.active_server.uid,],
+                   daemon=True).start()
+        ErrorDialog(message)
 
     def _get_javaversions(self):
         java_versions = []
 
         if subprocess.run("where java", stdout=subprocess.DEVNULL,
-                          stderr=subprocess.DEVNULL).returncode == 1:
+                          stderr=subprocess.DEVNULL, check=False).returncode == 1:
             WarnDialog("No Java installation found")
-            return
+            return None
 
         java_versions.append((f"Java {self._get_version_name('java')}", 'java'))
 
         drive_letter = subprocess.run("where java", stdout=subprocess.PIPE,
-                                      stderr=subprocess.DEVNULL).stdout.decode("utf-8") \
-                                                                .split("\n", maxsplit=1)[0][0]
+                                      stderr=subprocess.DEVNULL, check=False) \
+                                 .stdout.decode("utf-8") \
+                                 .split("\n", maxsplit=1)[0][0]
         java_dir = f"{drive_letter}:\\Program Files\\Java"
 
         version_foldernames = []
@@ -158,14 +171,16 @@ class Manager():
 
         return java_versions
 
-    def _get_version_name(self, path):
-        obj = subprocess.run(f'"{path}" --version', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    @staticmethod
+    def _get_version_name(path):
+        obj = subprocess.run(f'"{path}" --version', stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, check=False)
         if obj.stderr == b'':
             version_output_full = obj.stdout.decode("utf-8")
         else:
             # for older java versions
             obj = subprocess.run(f'"{path}" -version', stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE, check=False)
             version_output_full = obj.stderr.decode("utf-8")
 
         return re.search(r"[0-9]+\.[0-9]+\.[0-9]+_*[0-9]*\s*", version_output_full).group()

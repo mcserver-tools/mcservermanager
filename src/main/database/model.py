@@ -31,7 +31,8 @@ class Discord(Base):
 
     __tablename__ = "discord"
     discord_id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    mcserver_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("mcserver.mcserver_id"))
+    mcserver_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                    sqlalchemy.ForeignKey("mcserver.mcserver_id"))
     active = sqlalchemy.Column(sqlalchemy.Boolean)
     channel_id = sqlalchemy.Column(sqlalchemy.Integer)
     fulllog = sqlalchemy.Column(sqlalchemy.Boolean)

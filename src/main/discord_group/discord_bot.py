@@ -1,3 +1,7 @@
+"""Module containing the discord bot"""
+
+# pylint: disable=E0401, R0402
+
 import asyncio
 from queue import Queue
 from threading import Thread
@@ -10,11 +14,14 @@ import core.server_storage as server_storage
 import core.instances as instances
 
 class DiscordBot(commands.Bot):
+    """Class representing the discord bot"""
+
     def __init__(self):
         if instances.DISCORD_BOT is not None:
             raise Exception("There is already a discordbot instance")
 
-        super().__init__(command_prefix = 'mc.', help_command = None, intents = discord.Intents.all())
+        super().__init__(command_prefix = 'mc.', help_command = None,
+                         intents = discord.Intents.all())
 
         self.message_queues: dict[int, Queue] = {}
         self._messages = {}
@@ -26,15 +33,21 @@ class DiscordBot(commands.Bot):
         Thread(target=self._update_func, daemon=True).start()
 
     async def on_ready(self):
+        """Method called when the bot is ready"""
+
         instances.DISCORD_BOT = self
         print(f"{self.user} is now online")
 
     async def on_reaction_add(self, reaction, user):
+        """Method called when a reaction is added to a comment"""
+
         if user.name == "McServer-Manager":
             return
         await self.cogs["BotCommands"].on_reaction(reaction, user)
 
     async def on_message(self, message):
+        """Method called when a message is received"""
+
         if message.author.id == self.user.id or message.content.startswith("mc."):
             return await super().on_message(message)
 
@@ -57,22 +70,32 @@ class DiscordBot(commands.Bot):
             return
 
     def start_bot(self):
-        token = open("token.txt", "r").readlines()[0]
+        """Start the discord bot"""
+
+        with open("token.txt", "r", encoding="utf8") as file:
+            token = file.readlines()[0]
         self.run(token)
 
     def stop(self):
+        """Stop the discord bot"""
+
         logout_fut = asyncio.run_coroutine_threadsafe(self.close(), self.loop)
         logout_fut.result()
         DiscordBot.INSTANCE = None
 
     def send(self, channel_id, text):
-        if channel_id in self._messages.keys() and len(self._messages[channel_id].content) + 2 + len(text) < 2000:
+        """Send the given text to the given channel"""
+
+        if channel_id in self._messages \
+           and len(self._messages[channel_id].content) + 2 + len(text) < 2000:
             new_text = f"{self._messages[channel_id].content}\n{text}"
-            edit_fut = asyncio.run_coroutine_threadsafe(self._messages[channel_id].edit(content=new_text), self.loop)
+            edit_fut = asyncio.run_coroutine_threadsafe(self._messages[channel_id] \
+                              .edit(content=new_text), self.loop)
             edit_fut.result()
         else:
             while len(text) > 0:
-                send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id).send(text[0:1999:1]), self.loop)
+                send_fut = asyncio.run_coroutine_threadsafe(self.get_channel(channel_id) \
+                                  .send(text[0:1999:1]), self.loop)
                 self._messages[channel_id] = send_fut.result()
                 text = text[2000::1]
 
@@ -81,10 +104,10 @@ class DiscordBot(commands.Bot):
             sleep(1)
             while len(self.message_queues) == 0:
                 sleep(1)
-            
-            for key in self.message_queues:
-                if not self.message_queues[key].empty():
-                    self._handle_server(key, self.message_queues[key])
+
+            for key, value in self.message_queues.items():
+                if not value.empty():
+                    self._handle_server(key, value)
 
     def _handle_server(self, channel_id: int, queue: Queue):
         msg_text = queue.get()

@@ -11,7 +11,7 @@ import core.server_storage as server_storage
 import gui.dialogs as dialogs
 import core.instances as instances
 from gui.gui import GUI
-from dataclass.mcserver import defaults
+from dataclass.mcserver import Defaults
 
 def build():
     gui = GUI()
@@ -39,7 +39,7 @@ def build():
 
     gui.load_profile(server_storage.uids()[0])
 
-    gui.buttons[gui._active_server.uid].setChecked(True)
+    gui.buttons[gui.active_server.uid].setChecked(True)
 
     Thread(target=gui._update_players_thread, daemon=True).start()
 
@@ -138,7 +138,7 @@ def _add_overview_area(gui, mainVBox):
     portHBox = QHBoxLayout()
     gui.labels["port"] = QLabel("Port:")
     gui.line_edits["port"] = QLineEdit()
-    gui.line_edits["port"].setPlaceholderText(str(defaults.PORT))
+    gui.line_edits["port"].setPlaceholderText(str(Defaults.PORT))
     gui.line_edits["port"].textChanged.connect(gui._port_changed)
     portHBox.addWidget(gui.labels["port"])
     portHBox.addWidget(gui.line_edits["port"])
@@ -146,7 +146,7 @@ def _add_overview_area(gui, mainVBox):
     maxplayersHBox = QHBoxLayout()
     gui.labels["maxplayers"] = QLabel("Max players:")
     gui.line_edits["maxplayers"] = QLineEdit()
-    gui.line_edits["maxplayers"].setPlaceholderText(str(defaults.MAX_PLAYERS))
+    gui.line_edits["maxplayers"].setPlaceholderText(str(Defaults.MAX_PLAYERS))
     gui.line_edits["maxplayers"].textChanged.connect(gui._max_players_changed)
     maxplayersHBox.addWidget(gui.labels["maxplayers"])
     maxplayersHBox.addWidget(gui.line_edits["maxplayers"])
@@ -203,7 +203,7 @@ def _add_startup_area(gui, mainVBox):
     ramHBox = QHBoxLayout()
     gui.labels["ram"] = QLabel("RAM:")
     gui.line_edits["ram"] = QLineEdit()
-    gui.line_edits["ram"].setPlaceholderText(defaults.RAM)
+    gui.line_edits["ram"].setPlaceholderText(Defaults.RAM)
     gui.line_edits["ram"].textChanged.connect(gui._ram_changed)
     ramHBox.addWidget(gui.labels["ram"])
     ramHBox.addWidget(gui.line_edits["ram"])
@@ -211,7 +211,7 @@ def _add_startup_area(gui, mainVBox):
     jarHBox = QHBoxLayout()
     gui.labels["jar"] = QLabel("Server jar:")
     gui.line_edits["jar"] = QLineEdit()
-    gui.line_edits["jar"].setPlaceholderText(defaults.JAR)
+    gui.line_edits["jar"].setPlaceholderText(Defaults.JAR)
     gui.line_edits["jar"].textChanged.connect(gui._jar_changed)
     jarHBox.addWidget(gui.labels["jar"])
     jarHBox.addWidget(gui.line_edits["jar"])
@@ -244,7 +244,7 @@ def _add_startup_area(gui, mainVBox):
 def _add_discord_area(gui, mainVBox):
     discord_groupbox = QGroupBox("Discord")
     discord_groupbox.setCheckable(True)
-    discord_groupbox.setChecked(defaults.DC_ACTIVE)
+    discord_groupbox.setChecked(Defaults.DC_ACTIVE)
     discord_groupbox.toggled.connect(gui._dcbot_server_toggled)
     gui.check_boxes["dc_active"] = discord_groupbox
     mainVBox.addWidget(discord_groupbox)
@@ -254,14 +254,14 @@ def _add_discord_area(gui, mainVBox):
     idHBox = QHBoxLayout()
     gui.labels["dc_id"] = QLabel("Channel id:")
     gui.line_edits["dc_id"] = QLineEdit()
-    gui.line_edits["dc_id"].setPlaceholderText(str(defaults.DC_ID))
+    gui.line_edits["dc_id"].setPlaceholderText(str(Defaults.DC_ID))
     gui.line_edits["dc_id"].textChanged.connect(gui._dcbot_id_changed)
     idHBox.addWidget(gui.labels["dc_id"])
     idHBox.addWidget(gui.line_edits["dc_id"])
 
     gui.check_boxes["dc_full"] = QCheckBox()
     gui.check_boxes["dc_full"].setText("Full logs")
-    gui.check_boxes["dc_full"].setChecked(defaults.DC_FULL)
+    gui.check_boxes["dc_full"].setChecked(Defaults.DC_FULL)
     gui.check_boxes["dc_full"].toggled.connect(gui._dcbot_full_toggled)
 
     dcbot_HBox = QHBoxLayout()

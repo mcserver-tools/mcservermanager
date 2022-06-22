@@ -83,6 +83,27 @@ class WarnDialog(QDialog):
 
         mainBox.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
+class ErrorDialog(QDialog):
+    def __init__(self, msg) -> None:
+        super().__init__()
+
+        self.setWindowTitle("Error")
+
+        mainBox = QVBoxLayout()
+        msg_label = QLabel(msg)
+        mainBox.addWidget(msg_label)
+        self._add_labels(mainBox)
+        self.setLayout(mainBox)
+        self.exec()
+
+    def _add_labels(self, mainBox):
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedWidth(60)
+        ok_button.setCheckable(False)
+        ok_button.clicked.connect(self.deleteLater)
+
+        mainBox.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
 class ServerAddDialog(QDialog):
     def __init__(self) -> None:
         super().__init__()
@@ -206,12 +227,12 @@ class ServerRemoveDialog(QDialog):
         self.setLayout(buttonsHBox)
 
     def _remove_button(self):
-        instances.MANAGER.remove_server(instances.GUI._active_server.uid)
+        instances.MANAGER.remove_server(instances.GUI.active_server.uid)
         self.deleteLater()
 
     def _rem_del_button(self):
-        path = instances.GUI._active_server.path
-        instances.MANAGER.remove_server(instances.GUI._active_server.uid)
+        path = instances.GUI.active_server.path
+        instances.MANAGER.remove_server(instances.GUI.active_server.uid)
         shutil.rmtree(path, ignore_errors=True)
         self.deleteLater()
 
@@ -267,6 +288,6 @@ class JavaOptionsDialog(QDialog):
         instances.GUI.combo_boxes["java"].clear()
         for item in instances.DB_MANAGER.get_javaversions():
             instances.GUI.combo_boxes["java"].addItem(item[0])
-        java_name = instances.DB_MANAGER.get_javaname(instances.GUI._active_server.javapath)
+        java_name = instances.DB_MANAGER.get_javaname(instances.GUI.active_server.javapath)
         index = instances.GUI.combo_boxes["java"].findText(java_name)
         instances.GUI.combo_boxes["java"].setCurrentIndex(index)

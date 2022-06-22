@@ -9,7 +9,7 @@ import core.server_storage as server_storage
 import discord_group.discord_bot
 import helpers.info_getter as info_getter
 import core.instances as instances
-from dataclass.mcserver import McServer, defaults
+from dataclass.mcserver import McServer, Defaults
 
 class GUI(QMainWindow):
     def __init__(self):
@@ -26,23 +26,23 @@ class GUI(QMainWindow):
         self.combo_boxes = {}
         self.server_list_VBox = None
         self.startup_VBox = None
-        self._active_server: McServer = None
+        self.active_server: McServer = None
 
         instances.GUI = self
 
     def load_profile(self, uid):
-        if self._active_server is not None:
-            server_storage.save(self._active_server)
+        if self.active_server is not None:
+            server_storage.save(self.active_server)
 
         for item in server_storage.uids():
             self.buttons[item].setChecked(False)
         self.buttons[uid].setChecked(True)
 
-        self._active_server = server_storage.get(uid)
+        self.active_server = server_storage.get(uid)
         self._load_config()
 
     def load_profile_lazy(self, uid):
-        self._active_server = server_storage.get(uid)
+        self.active_server = server_storage.get(uid)
         self._load_config()
 
     def add_server(self, uid):
@@ -55,7 +55,7 @@ class GUI(QMainWindow):
         self.server_list_VBox.insertWidget(self.server_list_VBox.count()-1, self.buttons[server.uid])
 
     def _load_config(self):
-        server = self._active_server
+        server = self.active_server
 
         self._load_overview(server)
         self._load_whitelist(server)
@@ -72,17 +72,17 @@ class GUI(QMainWindow):
         self.labels["uid"].setText(str(server.uid))
         self.labels["path"].setText(server.path)
 
-        self.line_edits["port"].setText(str(server.port) if server.port != defaults.PORT else "")
+        self.line_edits["port"].setText(str(server.port) if server.port != Defaults.PORT else "")
 
-        self.line_edits["maxplayers"].setText(str(server.max_players) if server.max_players != defaults.MAX_PLAYERS else "")
+        self.line_edits["maxplayers"].setText(str(server.max_players) if server.max_players != Defaults.MAX_PLAYERS else "")
 
     def _load_whitelist(self, server: McServer):
         self.line_edits["whitelist"].setText(server.whitelist)
 
     def _load_startup(self, server: McServer):
-        self.line_edits["ram"].setText(server.ram if server.ram != defaults.RAM else "")
+        self.line_edits["ram"].setText(server.ram if server.ram != Defaults.RAM else "")
 
-        self.line_edits["jar"].setText(server.jar if server.jar != defaults.JAR else "")
+        self.line_edits["jar"].setText(server.jar if server.jar != Defaults.JAR else "")
 
         try:
             javaname = instances.DB_MANAGER.get_javaname(server.javapath)
@@ -97,44 +97,44 @@ class GUI(QMainWindow):
         self.line_edits["bat"].setText(server.batchfile)
 
     def _load_discord(self, server: McServer):
-        self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != defaults.DC_ID else "")
+        self.line_edits["dc_id"].setText(str(server.dc_id) if server.dc_id != Defaults.DC_ID else "")
 
         self.check_boxes["dc_full"].setChecked(bool(server.dc_full))
 
         self.check_boxes["dc_active"].setChecked(bool(server.dc_active))
 
     def _name_changed(self, text):
-        self._active_server.name = text
-        instances.DB_MANAGER.add_mcserver(self._active_server)
-        self.buttons[self._active_server.uid].setText(text + "\n" + self.buttons[self._active_server.uid].text().split("\n")[1])
+        self.active_server.name = text
+        instances.DB_MANAGER.add_mcserver(self.active_server)
+        self.buttons[self.active_server.uid].setText(text + "\n" + self.buttons[self.active_server.uid].text().split("\n")[1])
 
     def _port_changed(self, text):
         try:
-            self._active_server.port = int(text)
+            self.active_server.port = int(text)
         except ValueError:
-            self._active_server.port = defaults.PORT
+            self.active_server.port = Defaults.PORT
 
     def _max_players_changed(self, text):
         try:
-            self._active_server.max_players = int(text)
+            self.active_server.max_players = int(text)
         except ValueError:
-            self._active_server.max_players = defaults.MAX_PLAYERS
+            self.active_server.max_players = Defaults.MAX_PLAYERS
 
     def _whitelist_changed(self, text):
-        self._active_server.whitelist = text if text != "" else defaults.WHITELIST
+        self.active_server.whitelist = text if text != "" else Defaults.WHITELIST
 
     def _ram_changed(self, text):
-        self._active_server.ram = text if text != "" else defaults.RAM
+        self.active_server.ram = text if text != "" else Defaults.RAM
 
     def _jar_changed(self, text):
-        self._active_server.jar = text if text != "" else defaults.JAR
+        self.active_server.jar = text if text != "" else Defaults.JAR
 
     def _bat_changed(self, text):
-        self._active_server.batchfile = text
+        self.active_server.batchfile = text
 
     def _java_changed(self, text):
         if text != "":
-            self._active_server.javapath = instances.DB_MANAGER.get_javaversion(text)
+            self.active_server.javapath = instances.DB_MANAGER.get_javaversion(text)
 
     def _startup_changed(self, text):
         if text == "":
@@ -156,36 +156,36 @@ class GUI(QMainWindow):
             instances.DISCORD_BOT.stop()
 
     def _dcbot_server_toggled(self):
-        self._active_server.dc_active = int(self.check_boxes["dc_active"].isChecked())
+        self.active_server.dc_active = int(self.check_boxes["dc_active"].isChecked())
 
     def _dcbot_full_toggled(self):
-        self._active_server.dc_full = int(self.check_boxes["dc_full"].isChecked())
+        self.active_server.dc_full = int(self.check_boxes["dc_full"].isChecked())
 
     def _dcbot_id_changed(self, text):
         try:
-            self._active_server.dc_id = int(text)
+            self.active_server.dc_id = int(text)
         except ValueError:
-            self._active_server.dc_id = defaults.DC_ID
+            self.active_server.dc_id = Defaults.DC_ID
 
     def _serverbutton_clicked(self):
         uid = int(self.sender().objectName())
-        if uid != self._active_server.uid:
+        if uid != self.active_server.uid:
             self.load_profile(uid)
         else:
-            self.buttons[self._active_server.uid].setChecked(True)
+            self.buttons[self.active_server.uid].setChecked(True)
 
     def _pathbutton_clicked(self):
         new_path = QFileDialog.getExistingDirectory(caption="Select the server folder")
         if new_path != "":
-            self._active_server.path = new_path
+            self.active_server.path = new_path
             self.labels["path"].setText(new_path)
-            server_storage.save(self._active_server)
+            server_storage.save(self.active_server)
 
     def _start_button_clicked(self):
         if self.buttons["start"].text() == "Start":
-            Thread(target=instances.MANAGER.start_server, args=(self._active_server.uid,)).start()
+            Thread(target=instances.MANAGER.start_server, args=(self.active_server.uid,)).start()
         elif self.buttons["start"].text() == "Stop":
-            Thread(target=instances.MANAGER.stop_server, args=(self._active_server.uid,)).start()
+            Thread(target=instances.MANAGER.stop_server, args=(self.active_server.uid,)).start()
         else:
             raise Exception(f"start_button is in false state {self.buttons['start'].text()}")
 

@@ -1,5 +1,7 @@
 """Module for managing the database"""
 
+# pylint: disable=E0401, R0402
+
 from threading import Lock
 from typing import List
 
@@ -35,9 +37,15 @@ class DBManager():
         """Add a McServer object to the database"""
 
         with self.lock:
-            discord = Discord(active=mcserver_obj.dc_active, channel_id=mcserver_obj.dc_id, fulllog=mcserver_obj.dc_full)
-            new_mcserver = McServer(uid=mcserver_obj.uid, path=mcserver_obj.path, name=mcserver_obj.name, port=mcserver_obj.port, max_players=mcserver_obj.max_players, ram=mcserver_obj.ram, jar=mcserver_obj.jar, whitelist=mcserver_obj.whitelist, batchfile=mcserver_obj.batchfile, discord=discord)
-            java_version = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==1).first()
+            discord = Discord(active=mcserver_obj.dc_active, channel_id=mcserver_obj.dc_id,
+                              fulllog=mcserver_obj.dc_full)
+            new_mcserver = McServer(uid=mcserver_obj.uid, path=mcserver_obj.path,
+                                    name=mcserver_obj.name, port=mcserver_obj.port,
+                                    max_players=mcserver_obj.max_players, ram=mcserver_obj.ram,
+                                    jar=mcserver_obj.jar, whitelist=mcserver_obj.whitelist,
+                                    batchfile=mcserver_obj.batchfile, discord=discord)
+            java_version = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==1) \
+                                                          .first()
             java_version.mcserver.append(new_mcserver)
             self.session.add(discord)
             self.session.add(new_mcserver)
@@ -45,6 +53,8 @@ class DBManager():
         self.commit()
 
     def add_javaversion(self, name: str, path: str) -> None:
+        """Add a javaversion to the database"""
+
         with self.lock:
             if name in self.session.query(JavaVersion.name).all():
                 return
@@ -68,6 +78,8 @@ class DBManager():
                 self.session.rollback()
 
     def get_javaname(self, path) -> str:
+        """Return the javaversion with the given path"""
+
         with self.lock:
             saved = self.session.query(JavaVersion).filter(JavaVersion.path==path).first()
             if saved is None:
@@ -75,6 +87,8 @@ class DBManager():
             return saved.name
 
     def get_javaversion(self, name) -> str:
+        """Return the javaversion with the given name"""
+
         with self.lock:
             saved = self.session.query(JavaVersion).filter(JavaVersion.name==name).first()
             if saved is None:
@@ -82,20 +96,32 @@ class DBManager():
             return saved.path
 
     def get_javaversions(self) -> list[tuple[str, str]]:
+        """Return all javaversions"""
+
         with self.lock:
             return [(item.name, item.path) for item in self.session.query(JavaVersion).all()]
 
     def get_mcserver(self, uid: int) -> McServerObj:
+        """Return the server with the given UID"""
+
         with self.lock:
             saved = self.session.query(McServer).filter(McServer.uid==uid).first()
             if saved is None:
                 raise KeyError(f"McServer database entry with uid '{uid}' can't be found")
-            java_obj = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==saved.javaversion_id).first()
+            java_obj = self.session.query(JavaVersion) \
+                           .filter(JavaVersion.javaversion_id==saved.javaversion_id).first()
             if java_obj is None:
-                java_obj = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==1).first()
-            return McServerObj(uid=saved.uid, name=saved.name, path=saved.path, port=saved.port, max_players=saved.max_players, ram=saved.ram, jar=saved.jar, whitelist=saved.whitelist, batchfile=saved.batchfile, javapath=java_obj.path, dc_active=saved.discord.active, dc_id=saved.discord.channel_id, dc_full=saved.discord.fulllog)
+                java_obj = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==1) \
+                               .first()
+            return McServerObj(uid=saved.uid, name=saved.name, path=saved.path, port=saved.port,
+                               max_players=saved.max_players, ram=saved.ram, jar=saved.jar,
+                               whitelist=saved.whitelist, batchfile=saved.batchfile,
+                               javapath=java_obj.path, dc_active=saved.discord.active,
+                               dc_id=saved.discord.channel_id, dc_full=saved.discord.fulllog)
 
     def get_mcserver_by_name(self, name: str) -> McServerObj:
+        """Return the server with the given name"""
+
         with self.lock:
             saved = self.session.query(McServer).filter(McServer.name==name).first()
             if saved is None:
@@ -110,11 +136,17 @@ class DBManager():
             ret_list = []
             if saved != []:
                 for item in saved:
-                    java_obj = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==item.javaversion_id).first()
+                    java_obj = self.session.query(JavaVersion) \
+                                   .filter(JavaVersion.javaversion_id==item.javaversion_id).first()
                     if java_obj is None:
-                        java_obj = self.session.query(JavaVersion).filter(JavaVersion.javaversion_id==1).first()
+                        java_obj = self.session.query(JavaVersion) \
+                                       .filter(JavaVersion.javaversion_id==1).first()
                     if java_obj is not None:
-                        ret_list.append(McServerObj(item.uid, item.name, item.path, item.port, item.max_players, item.ram, item.jar, item.whitelist, item.batchfile, java_obj.path, item.discord.active, item.discord.channel_id, item.discord.fulllog))
+                        ret_list.append(McServerObj(item.uid, item.name, item.path, item.port,
+                                                    item.max_players, item.ram, item.jar,
+                                                    item.whitelist, item.batchfile, java_obj.path,
+                                                    item.discord.active, item.discord.channel_id,
+                                                    item.discord.fulllog))
         return ret_list
 
     def get_number_of_mcservers(self) -> int:
@@ -123,11 +155,16 @@ class DBManager():
         return self.session.query(McServer).count()
 
     def get_new_uid(self) -> int:
+        """Return a new, unused UID"""
+
         if self.get_number_of_mcservers() == 0:
             return 1
-        return self.session.query(McServer).order_by(McServer.mcserver_id.desc()).first().mcserver_id + 1
+        last_server = self.session.query(McServer).order_by(McServer.mcserver_id.desc()).first()
+        return last_server.mcserver_id + 1
 
     def remove_mcserver(self, uid: int) -> None:
+        """Remove a server from the database"""
+
         with self.lock:
             uid = self.session.query(McServer).filter(McServer.uid==uid).first().uid
             self.session.query(Discord).filter(Discord.mcserver_id==uid).delete()
@@ -135,16 +172,22 @@ class DBManager():
         self.commit()
 
     def save_mcserver(self, mcserver_obj: McServerObj) -> None:
+        """Save a server to the database"""
+
         with self.lock:
-            db_srv: McServer = self.session.query(McServer).filter(McServer.uid==mcserver_obj.uid).first()
+            db_srv: McServer = self.session.query(McServer) \
+                                   .filter(McServer.uid==mcserver_obj.uid).first()
             if db_srv is None:
                 self.lock.release()
-                return self.add_mcserver(mcserver_obj)
+                self.add_mcserver(mcserver_obj)
+                return
             db_srv.name = mcserver_obj.name
             db_srv.path = mcserver_obj.path
             db_srv.port = mcserver_obj.port
             db_srv.jar = mcserver_obj.jar
-            db_srv.javaversion_id = self.session.query(JavaVersion).filter(JavaVersion.path==mcserver_obj.javapath).first().javaversion_id
+            db_srv.javaversion_id = self.session.query(JavaVersion) \
+                                        .filter(JavaVersion.path==mcserver_obj.javapath) \
+                                        .first().javaversion_id
             db_srv.max_players = mcserver_obj.max_players
             db_srv.ram = mcserver_obj.ram
             db_srv.whitelist = mcserver_obj.whitelist
