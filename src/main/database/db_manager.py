@@ -2,6 +2,7 @@
 
 # pylint: disable=E0401, R0402
 
+import logging
 from threading import Lock
 from typing import List
 
@@ -19,7 +20,9 @@ class DBManager():
 
     def __init__(self):
         if instances.DB_MANAGER is not None:
-            raise Exception("There can only be one instance at a time")
+            logging.error("There can only be one instance at a time")
+
+        logging.debug("Creating DBManager instance")
 
         db_connection = sqlalchemy.create_engine("sqlite:///database.db",
                                                  connect_args={'check_same_thread': False})
@@ -37,6 +40,8 @@ class DBManager():
         """Add a McServer object to the database"""
 
         with self.lock:
+            logging.debug(f"Adding server {mcserver_obj.name} " +
+                          f"with uid {mcserver_obj.uid} to the database")
             discord = Discord(active=mcserver_obj.dc_active, channel_id=mcserver_obj.dc_id,
                               fulllog=mcserver_obj.dc_full)
             new_mcserver = McServer(uid=mcserver_obj.uid, path=mcserver_obj.path,
@@ -57,7 +62,12 @@ class DBManager():
 
         with self.lock:
             if name in self.session.query(JavaVersion.name).all():
+                logging.warn(f"Tried adding javaversion {name} " +
+                             f"from {path} to the database, but it already exists")
                 return
+
+            logging.debug(f"Adding javaversion {name} " +
+                          f"from {path} to the database")
 
             java_db = self.session.query(JavaVersion).filter(JavaVersion.path==path).first()
             if java_db is not None:
@@ -75,6 +85,7 @@ class DBManager():
             try:
                 self.session.commit()
             except sqlalchemy.exc.IntegrityError:
+                logging.debug("Committing database changes failed, rolling back")
                 self.session.rollback()
 
     def get_javaname(self, path) -> str:
@@ -83,6 +94,8 @@ class DBManager():
         with self.lock:
             saved = self.session.query(JavaVersion).filter(JavaVersion.path==path).first()
             if saved is None:
+                logging.warn(f"Tried getting JavaVersion from {path}, " +
+                             f"but it doesn't exist")
                 raise KeyError(f"JavaVersion database entry with path '{path}' can't be found")
             return saved.name
 
@@ -166,6 +179,7 @@ class DBManager():
         """Remove a server from the database"""
 
         with self.lock:
+            logging.debug(f"Removing McServer with uid {uid} from the database")
             uid = self.session.query(McServer).filter(McServer.uid==uid).first().uid
             self.session.query(Discord).filter(Discord.mcserver_id==uid).delete()
             self.session.query(McServer).filter(McServer.uid==uid).delete()
@@ -179,8 +193,12 @@ class DBManager():
                                    .filter(McServer.uid==mcserver_obj.uid).first()
             if db_srv is None:
                 self.lock.release()
+                logging.debug(f"Adding McServer {mcserver_obj.name} " +
+                              f"with uid {mcserver_obj.uid} to the database")
                 self.add_mcserver(mcserver_obj)
                 return
+            logging.debug(f"Saving McServer {mcserver_obj.name} " +
+                          f"with uid {mcserver_obj.uid} to the database")
             db_srv.name = mcserver_obj.name
             db_srv.path = mcserver_obj.path
             db_srv.port = mcserver_obj.port

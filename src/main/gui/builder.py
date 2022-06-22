@@ -1,4 +1,4 @@
-import os
+import logging
 from threading import Thread
 
 import core.server_storage as server_storage
@@ -14,6 +14,7 @@ from gui.gui import GUI
 from dataclass.mcserver import Defaults
 
 def build():
+    logging.debug("Started building GUI")
     gui = GUI()
 
     gui.setWindowTitle("McServerManager")
@@ -42,7 +43,8 @@ def build():
     gui.buttons[gui.active_server.uid].setChecked(True)
 
     Thread(target=gui._update_players_thread, daemon=True).start()
-
+    
+    logging.debug("Finished building GUI")
     return gui
 
 def _add_header(gui, mainbox):

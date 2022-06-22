@@ -3,6 +3,7 @@
 # pylint: disable=E0401, E0611, R0402
 
 import importlib
+import logging
 import os
 import re
 import subprocess
@@ -11,12 +12,12 @@ from queue import Queue
 from threading import Thread
 from time import sleep
 
-from PyQt6.QtWidgets import QApplication
-
 import discord_group.discord_bot
 import gui.builder as guibuilder
 from dataclass.mcserver import McServer
-from gui.dialogs import ErrorDialog, InfoDialog, WarnDialog
+from gui.dialogs import InfoDialog, WarnDialog
+from PyQt6.QtWidgets import QApplication
+
 import core.instances as instances
 import core.server_storage as server_storage
 
@@ -38,10 +39,15 @@ class Manager():
     def setup(self):
         """Initializes the manager"""
 
+        logging.basicConfig(filename='latest.log', filemode='w', level=logging.DEBUG, force=True)
+
         if not os.path.exists("./servers"):
+            logging.info("servers folder doesn't exist, creating...")
             os.mkdir("./servers")
 
         if instances.DB_MANAGER.get_javaversions() == []:
+            logging.info("No saved javaversions have been found, " + \
+                         "searching for installed versions...")
             self.save_javaversions(False)
 
         server_storage.setup()
@@ -62,25 +68,23 @@ class Manager():
     def add_server(name, path):
         """Adds a server with given name and path"""
 
+        logging.debug(f"Adding server {name} from {path}")
+
         uid = instances.DB_MANAGER.get_new_uid()
         server_storage.add(McServer(uid=uid, name=name, path=path))
         instances.GUI.add_server(uid)
 
-    @staticmethod
-    def start_server(uid):
+    def start_server(self, uid):
         """Starts the server with the given uid"""
 
         server = server_storage.get(uid)
         cmd, args = server.get_start_command()
+        logging.info(f"Starting server {uid} with the following command:\n{cmd}\nwith the following args:\n{args}")
 
         if instances.GUI.combo_boxes["startup"].currentText() == "bat file":
             cmd = server.batchfile
 
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstarting...")
-
-        print(f"Starting {server.name} with the following command:")
-        print(cmd)
-        print(args)
 
         main_cwd = os.getcwd()
         os.chdir(server.path)
@@ -88,9 +92,19 @@ class Manager():
                                                                   output=False)
         server_storage.save(server)
         instances.GUI.load_profile_lazy(server.uid)
-        server.wrapper.startup()
-        os.chdir(main_cwd)
 
+        try:
+            server.wrapper.startup()
+        except Exception as exc:
+            self.error_occured(exc.args[0])
+
+            server.wrapper = None
+            server_storage.save(server)
+
+            os.chdir(main_cwd)
+            return
+
+        os.chdir(main_cwd)
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nonline " + \
                                                   f"(0/{server.max_players})")
 
@@ -98,12 +112,14 @@ class Manager():
     def stop_server(uid):
         """Stops the server with the given uid"""
 
+        logging.info(f"Stopping server {uid}")
+
         server = server_storage.get(uid)
 
         instances.GUI.buttons[server.uid].setText(f"{server.name}\nstopping...")
-        server.wrapper.stop()
-
-        sleep(5)
+        if server.wrapper.server_running():
+            server.wrapper.stop()
+            sleep(5)
 
         server.wrapper = None
         server_storage.save(server)
@@ -113,6 +129,8 @@ class Manager():
     @staticmethod
     def remove_server(uid):
         """Removes the server with the given uid"""
+
+        logging.info(f"Removing server {uid}")
 
         server_storage.remove(uid)
         instances.GUI.buttons[uid].deleteLater()
@@ -139,7 +157,8 @@ class Manager():
         if instances.GUI.active_server.wrapper is not None:
             Thread(target=self.stop_server, args=[instances.GUI.active_server.uid,],
                    daemon=True).start()
-        ErrorDialog(message)
+
+        logging.error(message)
 
     def _get_javaversions(self):
         java_versions = []
@@ -197,4 +216,4 @@ class Manager():
                         instances.DISCORD_BOT.message_queues[int(item.dc_id)].put(text)
                     if text.startswith("Error:"):
                         self.error_occured(text)
-            sleep(1)
+            sleep(0.1)

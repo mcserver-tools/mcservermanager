@@ -2,6 +2,7 @@
 
 # pylint: disable=E0401, R0402
 
+import logging
 import core.instances as instances
 from dataclass.mcserver import McServer
 
@@ -61,6 +62,7 @@ def save(mcserver: McServer) -> None:
 def setup():
     """Initialize the server_storage"""
 
+    logging.debug("Setting up server_storage")
     for item in instances.DB_MANAGER.get_mcservers():
         _storage[item.uid] = None
 

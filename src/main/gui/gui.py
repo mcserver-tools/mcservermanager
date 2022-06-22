@@ -1,3 +1,4 @@
+import logging
 import os
 from threading import Thread
 from time import sleep
@@ -31,6 +32,8 @@ class GUI(QMainWindow):
         instances.GUI = self
 
     def load_profile(self, uid):
+        logging.debug(f"Loading server {uid}")
+
         if self.active_server is not None:
             server_storage.save(self.active_server)
 
@@ -42,6 +45,8 @@ class GUI(QMainWindow):
         self._load_config()
 
     def load_profile_lazy(self, uid):
+        logging.debug(f"Lazy-loading server {uid}")
+
         self.active_server = server_storage.get(uid)
         self._load_config()
 

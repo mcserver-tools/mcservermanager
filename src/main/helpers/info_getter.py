@@ -1,10 +1,13 @@
 """Module containing a function to ping a server with returns"""
 
+import logging
 from mcstatus import JavaServer
 from mcstatus.pinger import PingResponse
 
 def ping_address_with_return(address, port) -> PingResponse | None:
     """Return a PingResponse if the server is pingable, else return None"""
+
+    logging.debug(f"Pinging {address}:{port} for info")
 
     if isinstance(port, str):
         port = int(port)

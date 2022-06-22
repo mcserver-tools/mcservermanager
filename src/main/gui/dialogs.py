@@ -1,3 +1,4 @@
+import logging
 import shutil
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QLabel,
@@ -8,6 +9,8 @@ import core.instances as instances
 class ConfirmDialog(QDialog):
     def __init__(self, msg, func) -> None:
         super().__init__()
+
+        logging.debug("Creating ConfirmDialog")
 
         self.func = func
 
@@ -45,6 +48,8 @@ class InfoDialog(QDialog):
     def __init__(self, msg) -> None:
         super().__init__()
 
+        logging.debug("Creating InfoDialog")
+
         self.setWindowTitle("Info")
 
         mainBox = QVBoxLayout()
@@ -65,6 +70,8 @@ class InfoDialog(QDialog):
 class WarnDialog(QDialog):
     def __init__(self, msg) -> None:
         super().__init__()
+
+        logging.debug("Creating WarnDialog")
 
         self.setWindowTitle("Warning")
 
@@ -87,6 +94,8 @@ class ErrorDialog(QDialog):
     def __init__(self, msg) -> None:
         super().__init__()
 
+        logging.debug("Creating ErrorDialog")
+
         self.setWindowTitle("Error")
 
         mainBox = QVBoxLayout()
@@ -107,6 +116,8 @@ class ErrorDialog(QDialog):
 class ServerAddDialog(QDialog):
     def __init__(self) -> None:
         super().__init__()
+
+        logging.debug("Creating ServerAddDialog")
 
         self.setWindowTitle("Add server")
 
@@ -147,6 +158,8 @@ class ServerAddDialog(QDialog):
 class ServerChooseDialog(QDialog):
     def __init__(self) -> None:
         super().__init__()
+
+        logging.debug("Creating ServerChooseDialogDialog")
 
         self._name = None
         self._path = None
@@ -198,6 +211,8 @@ class ServerRemoveDialog(QDialog):
     def __init__(self) -> None:
         super().__init__()
 
+        logging.debug("Creating ServerRemoveDialog")
+
         self.setWindowTitle("Remove server")
 
         self._add_labels()
@@ -239,6 +254,8 @@ class ServerRemoveDialog(QDialog):
 class JavaOptionsDialog(QDialog):
     def __init__(self) -> None:
         super().__init__()
+
+        logging.debug("Creating JavaOptionsDialog")
 
         self._java_combobox = None
 
