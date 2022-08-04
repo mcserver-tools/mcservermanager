@@ -35,7 +35,7 @@ def get(uid: int) -> McServer:
     return srv
 
 def get_by_name(name: str) -> McServer:
-    """Return a server withthe given name from the database"""
+    """Return a server with the given name from the database"""
 
     if not isinstance(name, str):
         raise TypeError(f"Expected str, got {type(name)}")

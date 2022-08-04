@@ -39,7 +39,7 @@ class Manager():
     def setup(self):
         """Initializes the manager"""
 
-        logging.basicConfig(filename='latest.log', filemode='w', level=logging.DEBUG, force=True)
+        logging.basicConfig(filename='latest.log', filemode='w', level=logging.WARNING, force=True)
 
         if not os.path.exists("./servers"):
             logging.info("servers folder doesn't exist, creating...")

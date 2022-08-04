@@ -2,10 +2,13 @@
 
 # pylint: disable=E0401, R0402
 
+from discord import Embed
 from discord.ext import commands
 
 import core.instances as instances
 import core.server_storage as server_storage
+import helpers.info_getter as info_getter
+import helpers.parser as parser
 
 # ignore "Method could be a function",
 # because I don't wanna mess with the discord bot
@@ -27,6 +30,48 @@ class BotCommands(commands.Cog):
         """Return a help command"""
 
         await ctx.send("This is a help command.")
+
+    @commands.command()
+    async def info(self, ctx, *options):
+        """Print out info about the specified server"""
+
+        options = " ".join(options)
+
+        if options == "":
+            servers = parser.get_dc_channel_servers(ctx)
+            if servers is None:
+                await ctx.send(f"There is currently no server linked with this channel")
+                return
+            for server in servers:
+                status = info_getter.ping_address_with_return("127.0.0.1", server.port)
+                players = info_getter.get_players("127.0.0.1", server.port)
+                await ctx.send(embed=status.embed("Server info:", players))
+            return
+
+        address, port = parser.get_address(options)
+        status = info_getter.ping_address_with_return(address, port)
+        players = info_getter.get_players(address, port)
+        await ctx.send(embed=status.embed("Server info:", players))
+
+    @commands.command()
+    async def players(self, ctx, *options):
+        """Print out players of the specified server"""
+
+        options = " ".join(options)
+
+        if options == "":
+            servers = parser.get_dc_channel_servers(ctx)
+            if servers is None:
+                await ctx.send(f"There is currently no server linked with this channel")
+                return
+            for server in servers:
+                embed_var = self._get_players_embed("127.0.0.1", server.port)
+                await ctx.send(embed=embed_var)
+            return
+
+        address, port = parser.get_address(options)
+        embed_var = self._get_players_embed(address, port)
+        await ctx.send(embed=embed_var)
 
     @commands.command()
     async def setuplog(self, ctx, name: str = ""):
@@ -118,8 +163,12 @@ class BotCommands(commands.Cog):
         await ctx.send(f"Server logs removed for {srv.name} with uid {srv.uid}")
 
     @commands.command()
-    async def clear(self, ctx, amount: int):
+    async def clear(self, ctx, amount: int = 0):
         """Clear amount messages in the current channel"""
+
+        if amount == 0:
+            await ctx.send(f"{ctx.message.content} <-- Missing amount here")
+            return
 
         accept_decline = await ctx.send(f"Are you sure you want to delete {amount} messages?")
         yes_emoji = "✅"
@@ -162,6 +211,24 @@ class BotCommands(commands.Cog):
         instances.GUI.active_server.dc_active = srv.dc_active
         instances.GUI.active_server.dc_full = srv.dc_full
         instances.GUI.load_profile(instances.GUI.active_server.uid)
+
+    def _get_players_embed(self, address, port) -> Embed | None:
+        online_players = info_getter.ping_address_with_return(address, port).online_players
+        players = info_getter.get_players(address, port)
+
+        if players is None:
+            return None
+
+        embed_var = Embed(title=f"Online players:", color=0x00ff00)
+
+        players_text = "\n".join([f"{index+1}: {name}" for index, name in enumerate(players)])
+        if players_text == "":
+            if online_players > 0:
+                players_text = "Player names couldn't be fetched"
+            else:
+                players_text = "There is currently no player connected"
+        embed_var.add_field(name=f"Total: {online_players}", value=players_text, inline=False)
+        return embed_var
 
 def setup(client):
     """Setup the bot_commands cog"""

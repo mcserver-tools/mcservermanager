@@ -188,6 +188,7 @@ class GUI(QMainWindow):
 
     def _start_button_clicked(self):
         if self.buttons["start"].text() == "Start":
+            self.load_profile(self.active_server.uid)
             Thread(target=instances.MANAGER.start_server, args=(self.active_server.uid,)).start()
         elif self.buttons["start"].text() == "Stop":
             Thread(target=instances.MANAGER.stop_server, args=(self.active_server.uid,)).start()
@@ -208,5 +209,5 @@ class GUI(QMainWindow):
             if "starting..." in old_text or "stopping..." in old_text:
                 return
             split_text = old_text.split("(")
-            new_text = f"{split_text[0]}({status.players.online}/{split_text[1].split('/')[1]}"
+            new_text = f"{split_text[0]}({status.online_players}/{split_text[1].split('/')[1]}"
             self.buttons[server.uid].setText(new_text)
